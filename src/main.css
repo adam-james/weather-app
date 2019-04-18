@@ -10,7 +10,8 @@
 }
 
 body {
-  font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
+  font-family: "Source Sans Pro", "Trebuchet MS", "Lucida Grande",
+    "Bitstream Vera Sans", "Helvetica Neue", sans-serif;
   margin: 0;
   text-align: center;
   color: #293c4b;
@@ -23,4 +24,30 @@ h1 {
 img {
   margin: 20px 0;
   max-width: 200px;
+}
+
+.page-header {
+  height: 70px;
+  background-color: #bbdefb;
+}
+
+.page-header__nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+
+.page-header__nav-item {
+  color: #000;
+  font-size: 18;
+  text-decoration: none;
+  height: 100%;
+  padding: 16px;
+}
+
+.page-header__nav-link {
+  color: #000;
+  font-size: 24px;
+  text-decoration: none;
 }
