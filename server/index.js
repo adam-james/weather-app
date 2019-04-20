@@ -52,7 +52,7 @@ app.get("/cities", async (req, res) => {
 
   try {
     const regexp = new RegExp(`^${name}`, "i");
-    const cities = await City.find({ name: regexp, country: "US" }).limit(10);
+    const cities = await City.find({ name: regexp }).limit(10);
     res.json(cities);
   } catch (err) {
     handleError(err);
