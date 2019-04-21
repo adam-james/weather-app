@@ -15,6 +15,8 @@ view page =
                     [ a [ href "/", class "page-header__nav-link" ] [ text "Home" ] ]
                 , li [ class "page-header__nav-item" ]
                     [ a [ href "/about", class "page-header__nav-link" ] [ text "About" ] ]
+                , li [ class "page-header__nav-item" ]
+                    [ a [ href "/city", class "page-header__nav-link" ] [ text "City" ] ]
                 ]
             ]
         , page.content

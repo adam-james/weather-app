@@ -5,10 +5,11 @@ import Browser.Navigation as Nav
 import Html
 import Page
 import Page.About as AboutPage
+import Page.City as CityPage
 import Page.Home as HomePage
 import Page.NotFound as NotFoundPage
 import Url
-import Url.Parser as Parser
+import Url.Parser as Parser exposing ((</>))
 
 
 
@@ -18,12 +19,17 @@ import Url.Parser as Parser
 type Route
     = Home
     | About
+    | City
 
 
 routeParser : Parser.Parser (Route -> a) a
 routeParser =
     Parser.oneOf
         [ Parser.map Home Parser.top
+        , Parser.map Home (Parser.s "home")
+        , Parser.map City (Parser.s "city")
+        , Parser.map City (Parser.s "city" </> Parser.s "current-weather")
+        , Parser.map City (Parser.s "city" </> Parser.s "forecast")
         , Parser.map About (Parser.s "about")
         ]
 
@@ -97,6 +103,9 @@ view model =
                     Html.map GotHomeMsg content
             in
             Page.view { title = title, content = mappedContent }
+
+        Just City ->
+            Page.view (CityPage.view model.url)
 
         Just About ->
             Page.view AboutPage.view
