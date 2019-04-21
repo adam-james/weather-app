@@ -7,7 +7,7 @@ import Html.Attributes exposing (class, href)
 
 view : { title : String, content : Html msg } -> Browser.Document msg
 view page =
-    { title = "Pages - " ++ page.title
+    { title = "Weather App - " ++ page.title
     , body =
         [ header [ class "page-header" ]
             [ ul [ class "page-header__nav" ]
