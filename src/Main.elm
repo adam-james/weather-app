@@ -40,12 +40,13 @@ matchRoute url =
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
+    , homeModel : HomePage.Model
     }
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url, Cmd.none )
+    ( Model key url HomePage.init, Cmd.none )
 
 
 
@@ -55,6 +56,7 @@ init flags url key =
 type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
+    | GotHomeMsg HomePage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -71,6 +73,13 @@ update msg model =
         UrlChanged url ->
             ( { model | url = url }, Cmd.none )
 
+        GotHomeMsg homeMsg ->
+            let
+                homeModel =
+                    HomePage.update homeMsg model.homeModel
+            in
+            ( { model | homeModel = homeModel }, Cmd.none )
+
 
 
 ---- VIEW ----
@@ -80,7 +89,14 @@ view : Model -> Browser.Document Msg
 view model =
     case matchRoute model.url of
         Just Home ->
-            Page.view HomePage.view
+            let
+                { title, content } =
+                    HomePage.view model.homeModel
+
+                mappedContent =
+                    Html.map GotHomeMsg content
+            in
+            Page.view { title = title, content = mappedContent }
 
         Just About ->
             Page.view AboutPage.view
