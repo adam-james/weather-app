@@ -184,7 +184,13 @@ update msg model =
         Input textInput ->
             case String.length textInput of
                 0 ->
-                    ( { model | textInput = textInput }, Cmd.none )
+                    ( { model
+                        | textInput = textInput
+                        , cities = []
+                        , options = Combobox.Collapsed
+                      }
+                    , Cmd.none
+                    )
 
                 _ ->
                     ( { model | textInput = textInput }, getCities textInput )
