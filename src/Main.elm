@@ -85,10 +85,10 @@ update msg model =
 
         GotHomeMsg homeMsg ->
             let
-                ( homeModel, _ ) =
+                ( homeModel, homeCmd ) =
                     HomePage.update homeMsg model.homeModel
             in
-            ( { model | homeModel = homeModel }, Cmd.none )
+            ( { model | homeModel = homeModel }, Cmd.map GotHomeMsg homeCmd )
 
 
 

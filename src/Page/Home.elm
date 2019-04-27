@@ -1,24 +1,19 @@
-module Page.Home exposing (City, Model, Msg(..), init, update, view)
+module Page.Home exposing
+    ( City
+    , Model
+    , Msg(..)
+    , init
+    , update
+    , view
+    )
 
 import Browser
 import Combobox
 import Html exposing (..)
 import Html.Attributes as Attrs
 import Html.Events as Evnts
+import Http
 import Json.Decode as Decode
-
-
-
--- UTILS
-
-
-filterCities : String -> List City -> List City
-filterCities query cities =
-    List.filter
-        (\city ->
-            String.contains (String.toLower query) (String.toLower city.name)
-        )
-        cities
 
 
 
@@ -26,29 +21,21 @@ filterCities query cities =
 
 
 type alias City =
-    { id : Int, name : String }
-
-
-initialCities : List City
-initialCities =
-    [ { id = 1, name = "San Francisco" }
-    , { id = 2, name = "San Diego" }
-    , { id = 3, name = "Sacramento" }
-    , { id = 4, name = "San Jose" }
-    , { id = 5, name = "Santa Barbara" }
-    ]
+    { id : Int, name : String, country : String }
 
 
 type alias Model =
     { textInput : String
-    , cities : Combobox.Model City
+    , options : Combobox.Model City
+    , cities : List City
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { textInput = ""
-      , cities = Combobox.Collapsed
+      , options = Combobox.Collapsed
+      , cities = []
       }
     , Cmd.none
     )
@@ -68,14 +55,32 @@ type Msg
     | Blur
     | Focus
     | ClickCity City
+    | GotCities (Result Http.Error (List City))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GotCities result ->
+            case result of
+                Err _ ->
+                    ( model, Cmd.none )
+
+                Ok cities ->
+                    ( { model
+                        | cities = cities
+                        , options =
+                            Combobox.Expanded
+                                { activeOption = Nothing
+                                , options = cities
+                                }
+                      }
+                    , Cmd.none
+                    )
+
         ClickCity city ->
             ( { model
-                | cities = Combobox.Selected city
+                | options = Combobox.Selected city
                 , textInput = city.name
               }
             , Cmd.none
@@ -87,28 +92,33 @@ update msg model =
                     ( model, Cmd.none )
 
                 _ ->
-                    ( { model
-                        | cities =
-                            Combobox.Expanded
-                                { activeOption = Nothing
-                                , options = filterCities model.textInput initialCities
-                                }
-                      }
-                    , Cmd.none
-                    )
+                    case List.length model.cities of
+                        0 ->
+                            ( model, Cmd.none )
+
+                        _ ->
+                            ( { model
+                                | options =
+                                    Combobox.Expanded
+                                        { activeOption = Nothing
+                                        , options = model.cities
+                                        }
+                              }
+                            , Cmd.none
+                            )
 
         Blur ->
             let
                 cities =
-                    case model.cities of
+                    case model.options of
                         Combobox.Selected _ ->
-                            model.cities
+                            model.options
 
                         _ ->
                             Combobox.Collapsed
             in
             ( { model
-                | cities = cities
+                | options = cities
               }
             , Cmd.none
             )
@@ -116,7 +126,7 @@ update msg model =
         Escape ->
             ( { model
                 | textInput = ""
-                , cities = Combobox.Collapsed
+                , options = Combobox.Collapsed
               }
             , Cmd.none
             )
@@ -124,7 +134,7 @@ update msg model =
         Enter ->
             let
                 cities =
-                    case model.cities of
+                    case model.options of
                         Combobox.Collapsed ->
                             Combobox.Collapsed
 
@@ -151,7 +161,7 @@ update msg model =
                             model.textInput
             in
             ( { model
-                | cities = cities
+                | options = cities
                 , textInput = textInput
               }
             , Cmd.none
@@ -160,36 +170,24 @@ update msg model =
         Up ->
             let
                 cities =
-                    Combobox.activatePrevious model.cities
+                    Combobox.activatePrevious model.options
             in
-            ( { model | cities = cities }, Cmd.none )
+            ( { model | options = cities }, Cmd.none )
 
         Down ->
             let
                 cities =
-                    Combobox.activateNext model.cities
+                    Combobox.activateNext model.options
             in
-            ( { model | cities = cities }, Cmd.none )
+            ( { model | options = cities }, Cmd.none )
 
         Input textInput ->
-            let
-                cities =
-                    case String.length textInput of
-                        0 ->
-                            Combobox.Collapsed
+            case String.length textInput of
+                0 ->
+                    ( { model | textInput = textInput }, Cmd.none )
 
-                        _ ->
-                            Combobox.Expanded
-                                { activeOption = Nothing
-                                , options = filterCities textInput initialCities
-                                }
-            in
-            ( { model
-                | textInput = textInput
-                , cities = cities
-              }
-            , Cmd.none
-            )
+                _ ->
+                    ( { model | textInput = textInput }, getCities textInput )
 
         NoOp ->
             ( model, Cmd.none )
@@ -238,29 +236,28 @@ view model =
 
 content : Model -> Html Msg
 content model =
-    Combobox.container model.cities
+    Combobox.container model.options
         listitemId
         [ Combobox.comboboxLabel "Find a city"
-        , Combobox.textbox model.cities
+        , Combobox.textbox model.options
             [ Evnts.onInput Input
             , Evnts.on "keydown" <| keyDecoder
             , Attrs.value (inputValue model)
             , Evnts.onBlur Blur
             , Evnts.onFocus Focus
             ]
-        , Combobox.listbox model.cities (viewOptions model)
+        , Combobox.listbox model.options (viewOptions model)
         ]
 
 
 viewOptions : Model -> List (Html Msg)
 viewOptions model =
-    case model.cities of
+    case model.options of
         Combobox.Expanded { activeOption, options } ->
             options
-                |> filterCities model.textInput
                 |> List.map
                     (Combobox.option
-                        model.cities
+                        model.options
                         listitemId
                         .name
                         (\city -> [ Evnts.onMouseDown (ClickCity city) ])
@@ -275,7 +272,7 @@ viewOptions model =
 
 inputValue : Model -> String
 inputValue model =
-    case model.cities of
+    case model.options of
         Combobox.Selected selected ->
             selected.name
 
@@ -286,3 +283,28 @@ inputValue model =
 listitemId : City -> String
 listitemId city =
     "city-" ++ String.fromInt city.id
+
+
+
+-- HTTP
+
+
+getCities : String -> Cmd Msg
+getCities query =
+    Http.get
+        { url = "http://localhost:5000/cities?name=" ++ query
+        , expect = Http.expectJson GotCities citiesDecoder
+        }
+
+
+cityDecoder : Decode.Decoder City
+cityDecoder =
+    Decode.map3 City
+        (Decode.field "id" Decode.int)
+        (Decode.field "name" Decode.string)
+        (Decode.field "country" Decode.string)
+
+
+citiesDecoder : Decode.Decoder (List City)
+citiesDecoder =
+    Decode.list cityDecoder

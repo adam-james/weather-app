@@ -3,6 +3,7 @@ require("dotenv").config();
 const app = require("express")();
 const fetch = require("node-fetch");
 const mongoose = require("mongoose");
+const cors = require("cors");
 const City = require("./models/city");
 const port = 5000;
 
@@ -22,6 +23,8 @@ function handleError(err) {
   console.log(err);
   res.status(500).json({ error: "An error occurred" });
 }
+
+app.use(cors());
 
 app.get("/weather", async (req, res) => {
   const endpoint = "/weather";
