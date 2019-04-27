@@ -26,7 +26,13 @@ function handleError(err) {
 
 app.use(cors());
 
-app.get("/weather", async (req, res) => {
+app.get("/current-weather", async (req, res) => {
+  const { cityId } = req.query;
+
+  if (cityId == null) {
+    return res.status(422).json({ errors: { name: "City ID required" } });
+  }
+
   const endpoint = "/weather";
   const url = getUrl(endpoint, cityId);
 

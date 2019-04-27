@@ -47,6 +47,7 @@ type alias Model =
     { key : Nav.Key
     , url : Url.Url
     , homeModel : HomePage.Model
+    , cityModel : CityPage.Model
     }
 
 
@@ -55,8 +56,16 @@ init flags url key =
     let
         ( homeModel, _ ) =
             HomePage.init key
+
+        ( cityModel, cityCmd ) =
+            case matchRoute url of
+                Just (City cityId) ->
+                    CityPage.init (Just cityId)
+
+                _ ->
+                    CityPage.init Nothing
     in
-    ( Model key url homeModel, Cmd.none )
+    ( Model key url homeModel cityModel, Cmd.map GotCityMsg cityCmd )
 
 
 
@@ -67,6 +76,7 @@ type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | GotHomeMsg HomePage.Msg
+    | GotCityMsg CityPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -81,7 +91,30 @@ update msg model =
                     ( model, Nav.load href )
 
         UrlChanged url ->
-            ( { model | url = url }, Cmd.none )
+            let
+                ( cityModel, cityCmd ) =
+                    case matchRoute url of
+                        Just (City cityId) ->
+                            CityPage.init (Just cityId)
+
+                        _ ->
+                            CityPage.init Nothing
+            in
+            case matchRoute url of
+                Just (City _) ->
+                    ( { model
+                        | url = url
+                        , cityModel = cityModel
+                      }
+                    , Cmd.map GotCityMsg cityCmd
+                    )
+
+                _ ->
+                    ( { model
+                        | url = url
+                      }
+                    , Cmd.none
+                    )
 
         GotHomeMsg homeMsg ->
             let
@@ -89,6 +122,13 @@ update msg model =
                     HomePage.update homeMsg model.homeModel
             in
             ( { model | homeModel = homeModel }, Cmd.map GotHomeMsg homeCmd )
+
+        GotCityMsg cityMsg ->
+            let
+                ( cityModel, cityCmd ) =
+                    CityPage.update cityMsg model.cityModel
+            in
+            ( { model | cityModel = cityModel }, Cmd.map GotCityMsg cityCmd )
 
 
 
@@ -109,7 +149,7 @@ view model =
             Page.view { title = title, content = mappedContent }
 
         Just (City cityId) ->
-            Page.view (CityPage.view model.url)
+            Page.view (CityPage.view model.url model.cityModel)
 
         Just About ->
             Page.view AboutPage.view
