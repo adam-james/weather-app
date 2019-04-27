@@ -240,7 +240,8 @@ content : Model -> Html Msg
 content model =
     Combobox.container model.cities
         listitemId
-        [ Combobox.textbox model.cities
+        [ Combobox.comboboxLabel "Find a city"
+        , Combobox.textbox model.cities
             [ Evnts.onInput Input
             , Evnts.on "keydown" <| keyDecoder
             , Attrs.value (inputValue model)

@@ -4,6 +4,7 @@ module Combobox exposing
     , Selectable(..)
     , activateNext
     , activatePrevious
+    , comboboxLabel
     , container
     , listbox
     , option
@@ -151,6 +152,16 @@ listbox model children =
     ul [ Attrs.id listboxId, role "listbox" ] children
 
 
+labelId : String
+labelId =
+    "combobox-label"
+
+
+comboboxLabel : String -> Html msg
+comboboxLabel txt =
+    label [ Attrs.id labelId, Attrs.class "combobox__label" ] [ text txt ]
+
+
 option : Model a -> (a -> String) -> (a -> String) -> (a -> List (Attribute msg)) -> a -> Html msg
 option model getId getText getAttrs item =
     let
@@ -196,7 +207,7 @@ container : Model a -> (a -> String) -> List (Html msg) -> Html msg
 container model getId children =
     let
         baseAttrs =
-            [ role "combobox" ]
+            [ role "combobox", ariaLabelledby labelId ]
 
         attrs =
             case model of
@@ -251,3 +262,8 @@ ariaSelected =
 ariaAutocomplete : String -> Html.Attribute msg
 ariaAutocomplete =
     Attrs.attribute "aria-autocomplete"
+
+
+ariaLabelledby : String -> Html.Attribute msg
+ariaLabelledby =
+    Attrs.attribute "aria-labelledby"

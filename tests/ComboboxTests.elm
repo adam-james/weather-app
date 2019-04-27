@@ -333,6 +333,18 @@ containerTests =
                     |> Query.find
                         [ Selector.tag "div" ]
                     |> Query.has [ Selector.attribute (Attrs.attribute "role" "combobox") ]
+        , test "has 'aria-labellby' referencing label" <|
+            \_ ->
+                testWrapper
+                    (container
+                        Combobox.Collapsed
+                        (\city -> "city-" ++ String.fromInt city.id)
+                        []
+                    )
+                    |> Query.fromHtml
+                    |> Query.find
+                        [ Selector.tag "div" ]
+                    |> Query.has [ Selector.attribute (Attrs.attribute "aria-labelledby" "combobox-label") ]
         , test "sets 'aria-expanded' to 'false'" <|
             \_ ->
                 testWrapper

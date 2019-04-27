@@ -63,3 +63,7 @@ img {
 .options__option--active {
   color: red;
 }
+
+.combobox__label {
+  display: block;
+}
