@@ -19,7 +19,7 @@ import Url.Parser as Parser exposing ((</>))
 type Route
     = Home
     | About
-    | City
+    | City Int
 
 
 routeParser : Parser.Parser (Route -> a) a
@@ -27,9 +27,9 @@ routeParser =
     Parser.oneOf
         [ Parser.map Home Parser.top
         , Parser.map Home (Parser.s "home")
-        , Parser.map City (Parser.s "city")
-        , Parser.map City (Parser.s "city" </> Parser.s "current-weather")
-        , Parser.map City (Parser.s "city" </> Parser.s "forecast")
+        , Parser.map City (Parser.s "city" </> Parser.int)
+        , Parser.map City (Parser.s "city" </> Parser.int </> Parser.s "current-weather")
+        , Parser.map City (Parser.s "city" </> Parser.int </> Parser.s "forecast")
         , Parser.map About (Parser.s "about")
         ]
 
@@ -54,7 +54,7 @@ init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         ( homeModel, _ ) =
-            HomePage.init
+            HomePage.init key
     in
     ( Model key url homeModel, Cmd.none )
 
@@ -108,7 +108,7 @@ view model =
             in
             Page.view { title = title, content = mappedContent }
 
-        Just City ->
+        Just (City cityId) ->
             Page.view (CityPage.view model.url)
 
         Just About ->

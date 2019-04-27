@@ -8,6 +8,7 @@ module Page.Home exposing
     )
 
 import Browser
+import Browser.Navigation as Nav
 import Combobox
 import Html exposing (..)
 import Html.Attributes as Attrs
@@ -28,14 +29,16 @@ type alias Model =
     { textInput : String
     , options : Combobox.Model City
     , cities : List City
+    , key : Nav.Key
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Nav.Key -> ( Model, Cmd Msg )
+init key =
     ( { textInput = ""
       , options = Combobox.Collapsed
       , cities = []
+      , key = key
       }
     , Cmd.none
     )
@@ -50,17 +53,40 @@ type Msg
     | Input String
     | Up
     | Down
-    | Enter
     | Escape
     | Blur
-    | Focus
     | ClickCity City
     | GotCities (Result Http.Error (List City))
+    | Submit
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Submit ->
+            case model.options of
+                Combobox.Selected selectedCity ->
+                    ( model
+                    , Nav.pushUrl model.key
+                        ("/city/" ++ String.fromInt selectedCity.id)
+                    )
+
+                Combobox.Expanded { activeOption } ->
+                    case activeOption of
+                        Just active ->
+                            ( { model
+                                | options = Combobox.Selected active
+                                , textInput = active.name
+                              }
+                            , Cmd.none
+                            )
+
+                        Nothing ->
+                            ( model, Cmd.none )
+
+                Combobox.Collapsed ->
+                    ( model, Cmd.none )
+
         GotCities result ->
             case result of
                 Err _ ->
@@ -86,27 +112,6 @@ update msg model =
             , Cmd.none
             )
 
-        Focus ->
-            case String.length model.textInput of
-                0 ->
-                    ( model, Cmd.none )
-
-                _ ->
-                    case List.length model.cities of
-                        0 ->
-                            ( model, Cmd.none )
-
-                        _ ->
-                            ( { model
-                                | options =
-                                    Combobox.Expanded
-                                        { activeOption = Nothing
-                                        , options = model.cities
-                                        }
-                              }
-                            , Cmd.none
-                            )
-
         Blur ->
             let
                 cities =
@@ -127,42 +132,6 @@ update msg model =
             ( { model
                 | textInput = ""
                 , options = Combobox.Collapsed
-              }
-            , Cmd.none
-            )
-
-        Enter ->
-            let
-                cities =
-                    case model.options of
-                        Combobox.Collapsed ->
-                            Combobox.Collapsed
-
-                        Combobox.Expanded { activeOption, options } ->
-                            case activeOption of
-                                Nothing ->
-                                    Combobox.Expanded
-                                        { activeOption = activeOption
-                                        , options = options
-                                        }
-
-                                Just city ->
-                                    Combobox.Selected city
-
-                        Combobox.Selected selected ->
-                            Combobox.Selected selected
-
-                textInput =
-                    case cities of
-                        Combobox.Selected selected ->
-                            selected.name
-
-                        _ ->
-                            model.textInput
-            in
-            ( { model
-                | options = cities
-                , textInput = textInput
               }
             , Cmd.none
             )
@@ -219,9 +188,6 @@ toDirection keyCode =
         40 ->
             Down
 
-        13 ->
-            Enter
-
         27 ->
             Escape
 
@@ -242,17 +208,20 @@ view model =
 
 content : Model -> Html Msg
 content model =
-    Combobox.container model.options
-        listitemId
-        [ Combobox.comboboxLabel "Find a city"
-        , Combobox.textbox model.options
-            [ Evnts.onInput Input
-            , Evnts.on "keydown" <| keyDecoder
-            , Attrs.value (inputValue model)
-            , Evnts.onBlur Blur
-            , Evnts.onFocus Focus
+    form [ Evnts.onSubmit Submit ]
+        [ Combobox.container
+            model.options
+            listitemId
+            [ Combobox.comboboxLabel "Find a city"
+            , Combobox.textbox model.options
+                [ Evnts.onInput Input
+                , Evnts.on "keydown" <| keyDecoder
+                , Attrs.value (inputValue model)
+                , Evnts.onBlur Blur
+                ]
+            , Combobox.listbox model.options (viewOptions model)
             ]
-        , Combobox.listbox model.options (viewOptions model)
+        , button [] [ text "Go" ]
         ]
 
 
