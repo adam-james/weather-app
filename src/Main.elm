@@ -52,7 +52,11 @@ type alias Model =
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url HomePage.init, Cmd.none )
+    let
+        ( homeModel, _ ) =
+            HomePage.init
+    in
+    ( Model key url homeModel, Cmd.none )
 
 
 
@@ -81,7 +85,7 @@ update msg model =
 
         GotHomeMsg homeMsg ->
             let
-                homeModel =
+                ( homeModel, _ ) =
                     HomePage.update homeMsg model.homeModel
             in
             ( { model | homeModel = homeModel }, Cmd.none )
