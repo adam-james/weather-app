@@ -1,7 +1,7 @@
 module Page.City exposing (Model, Msg, init, update, view)
 
 import Html exposing (..)
-import Html.Attributes exposing (href)
+import Html.Attributes exposing (class, href)
 import Http
 import Json.Decode as Decode
 import Page.City.Forecast as ForecastPage
@@ -28,15 +28,14 @@ type alias Main =
     }
 
 
-type alias Coord =
-    { lon : Float
-    , lat : Float
-    }
-
-
 type alias Wind =
     { speed : Float
     , degrees : Int
+    }
+
+
+type alias Clouds =
+    { all : Int
     }
 
 
@@ -47,12 +46,31 @@ type alias Sys =
     }
 
 
+
+-- TODO what is this list of Weather?
+
+
+type alias Weather =
+    { id : Int
+    , main : String
+    , description : String
+    , icon : String
+    }
+
+
+
+-- TODO There is also rain and snow in this, but it seems optional.
+
+
 type alias CurrentWeather =
     { main : Main
-    , coor : Coord
     , wind : Wind
     , sys : Sys
     , name : String
+    , weather : List Weather
+    , visibility : Int
+    , datetime : Int
+    , clouds : Clouds
     }
 
 
@@ -127,19 +145,9 @@ matchRoute url =
 -- VIEW
 
 
-view : Url.Url -> Model -> { title : String, content : Html msg }
-view url model =
-    case matchRoute url of
-        Just (CurrentWeatherRoute cityId) ->
-            baseView cityId (currentWeatherView model)
-
-        Just (Forecast cityId) ->
-            baseView cityId ForecastPage.view
-
-        Nothing ->
-            { title = "City - Not Found"
-            , content = h1 [] [ text "Not Found" ]
-            }
+view : Model -> { title : String, content : Html msg }
+view model =
+    baseView (currentWeatherView model)
 
 
 currentWeatherView : Model -> Html msg
@@ -159,18 +167,51 @@ tmpWeatherBreakdown : CurrentWeather -> Html msg
 tmpWeatherBreakdown currentWeather =
     section []
         [ h2 [] [ text (cityName currentWeather) ]
-        , p [] [ text ("Latitude: " ++ String.fromFloat currentWeather.coor.lat) ]
-        , p [] [ text ("Longitude: " ++ String.fromFloat currentWeather.coor.lon) ]
-        , p [] [ text ("Humidity: " ++ String.fromInt currentWeather.main.humidity) ]
-        , p [] [ text ("Pressure: " ++ String.fromInt currentWeather.main.pressure) ]
+        , p [] [ text ("Time : " ++ String.fromInt currentWeather.datetime) ]
+        , h3 [] [ text "Current Weather" ]
+        , firstWeather currentWeather.weather
         , p [] [ text ("Temperature (F): " ++ String.fromFloat currentWeather.main.temp) ]
         , p [] [ text ("High (F): " ++ String.fromFloat currentWeather.main.tempMax) ]
         , p [] [ text ("Low (F): " ++ String.fromFloat currentWeather.main.tempMin) ]
+        , p [] [ text ("Cloudiness (%): " ++ String.fromInt currentWeather.clouds.all) ]
+        , p [] [ text ("Humidity: " ++ String.fromInt currentWeather.main.humidity) ]
+        , p [] [ text ("Pressure: " ++ String.fromInt currentWeather.main.pressure) ]
+        , h3 [] [ text "Sunrise - Sunset Section" ]
         , p [] [ text ("Sunrise: " ++ String.fromInt currentWeather.sys.sunrise) ]
         , p [] [ text ("Sunset: " ++ String.fromInt currentWeather.sys.sunset) ]
+        , h3 [] [ text "Wind Section" ]
         , p [] [ text ("Wind Speed: " ++ String.fromFloat currentWeather.wind.speed) ]
         , p [] [ text ("Wind Direction: " ++ String.fromInt currentWeather.wind.degrees) ]
         ]
+
+
+firstWeather : List Weather -> Html msg
+firstWeather weathers =
+    let
+        first =
+            List.head weathers
+
+        outer children =
+            section [ class "first-weather" ]
+                (h3 [] [ text "Icon stuff" ]
+                    :: children
+                )
+    in
+    case first of
+        Nothing ->
+            outer
+                [ p
+                    []
+                    [ text "No first weather!" ]
+                ]
+
+        Just weather ->
+            outer
+                [ p [] [ text ("Id: " ++ String.fromInt weather.id) ]
+                , p [] [ text ("Description: " ++ weather.description) ]
+                , p [] [ text ("Icon: " ++ weather.icon) ]
+                , p [] [ text ("Main: " ++ weather.main) ]
+                ]
 
 
 cityName : CurrentWeather -> String
@@ -178,29 +219,11 @@ cityName currentWeather =
     currentWeather.name ++ ", " ++ currentWeather.sys.country
 
 
-baseView : Int -> Html msg -> { title : String, content : Html msg }
-baseView cityId subView =
+baseView : Html msg -> { title : String, content : Html msg }
+baseView subView =
     { title = "City"
-    , content =
-        div []
-            [ ul
-                []
-                [ li [] [ a [ href (currentWeatherHref cityId) ] [ text "Current Weather" ] ]
-                , li [] [ a [ href (forecastHref cityId) ] [ text "Forecast" ] ]
-                ]
-            , subView
-            ]
+    , content = subView
     }
-
-
-currentWeatherHref : Int -> String
-currentWeatherHref cityId =
-    "/city/" ++ String.fromInt cityId ++ "/current-weather"
-
-
-forecastHref : Int -> String
-forecastHref cityId =
-    "/city/" ++ String.fromInt cityId ++ "/forecast"
 
 
 
@@ -217,12 +240,35 @@ getCurrentWeather cityId =
 
 currentWeatherDecoder : Decode.Decoder CurrentWeather
 currentWeatherDecoder =
-    Decode.map5 CurrentWeather
+    Decode.map8 CurrentWeather
         (Decode.field "main" mainDecoder)
-        (Decode.field "coord" coordDecoder)
         (Decode.field "wind" windDecoder)
         (Decode.field "sys" sysDecoder)
         (Decode.field "name" Decode.string)
+        (Decode.field "weather" weathersDecoder)
+        (Decode.field "visibility" Decode.int)
+        (Decode.field "dt" Decode.int)
+        (Decode.field "clouds" cloudsDecoder)
+
+
+cloudsDecoder : Decode.Decoder Clouds
+cloudsDecoder =
+    Decode.map Clouds
+        (Decode.field "all" Decode.int)
+
+
+weathersDecoder : Decode.Decoder (List Weather)
+weathersDecoder =
+    Decode.list weatherDecoder
+
+
+weatherDecoder : Decode.Decoder Weather
+weatherDecoder =
+    Decode.map4 Weather
+        (Decode.field "id" Decode.int)
+        (Decode.field "main" Decode.string)
+        (Decode.field "description" Decode.string)
+        (Decode.field "icon" Decode.string)
 
 
 sysDecoder : Decode.Decoder Sys
@@ -238,13 +284,6 @@ windDecoder =
     Decode.map2 Wind
         (Decode.field "speed" Decode.float)
         (Decode.field "deg" Decode.int)
-
-
-coordDecoder : Decode.Decoder Coord
-coordDecoder =
-    Decode.map2 Coord
-        (Decode.field "lon" Decode.float)
-        (Decode.field "lat" Decode.float)
 
 
 mainDecoder : Decode.Decoder Main

@@ -148,8 +148,8 @@ view model =
             in
             Page.view { title = title, content = mappedContent }
 
-        Just (City cityId) ->
-            Page.view (CityPage.view model.url model.cityModel)
+        Just (City _) ->
+            Page.view (CityPage.view model.cityModel)
 
         Just About ->
             Page.view AboutPage.view

@@ -67,3 +67,7 @@ img {
 .combobox__label {
   display: block;
 }
+
+.first-weather {
+  border: 1px solid gray;
+}
