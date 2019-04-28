@@ -11,7 +11,6 @@ import Url.Parser as Parser exposing ((</>))
 
 
 -- MODEL
--- TODO add NotAsked
 
 
 type Request a
@@ -24,13 +23,37 @@ type alias Main =
     { temp : Float
     , pressure : Int
     , humidity : Int
-    , temp_min : Float
-    , temp_max : Float
+    , tempMin : Float
+    , tempMax : Float
+    }
+
+
+type alias Coord =
+    { lon : Float
+    , lat : Float
+    }
+
+
+type alias Wind =
+    { speed : Float
+    , degrees : Int
+    }
+
+
+type alias Sys =
+    { country : String
+    , sunrise : Int
+    , sunset : Int
     }
 
 
 type alias CurrentWeather =
-    { main : Main }
+    { main : Main
+    , coor : Coord
+    , wind : Wind
+    , sys : Sys
+    , name : String
+    }
 
 
 type alias Model =
@@ -119,7 +142,7 @@ view url model =
             }
 
 
-currentWeatherView : Model -> Html mgs
+currentWeatherView : Model -> Html msg
 currentWeatherView model =
     case model.currentWeather of
         Loading ->
@@ -129,7 +152,30 @@ currentWeatherView model =
             p [] [ text "Something went wrong :(" ]
 
         Success currentWeather ->
-            p [] [ text ("The temperature is " ++ String.fromFloat currentWeather.main.temp) ]
+            tmpWeatherBreakdown currentWeather
+
+
+tmpWeatherBreakdown : CurrentWeather -> Html msg
+tmpWeatherBreakdown currentWeather =
+    section []
+        [ h2 [] [ text (cityName currentWeather) ]
+        , p [] [ text ("Latitude: " ++ String.fromFloat currentWeather.coor.lat) ]
+        , p [] [ text ("Longitude: " ++ String.fromFloat currentWeather.coor.lon) ]
+        , p [] [ text ("Humidity: " ++ String.fromInt currentWeather.main.humidity) ]
+        , p [] [ text ("Pressure: " ++ String.fromInt currentWeather.main.pressure) ]
+        , p [] [ text ("Temperature (F): " ++ String.fromFloat currentWeather.main.temp) ]
+        , p [] [ text ("High (F): " ++ String.fromFloat currentWeather.main.tempMax) ]
+        , p [] [ text ("Low (F): " ++ String.fromFloat currentWeather.main.tempMin) ]
+        , p [] [ text ("Sunrise: " ++ String.fromInt currentWeather.sys.sunrise) ]
+        , p [] [ text ("Sunset: " ++ String.fromInt currentWeather.sys.sunset) ]
+        , p [] [ text ("Wind Speed: " ++ String.fromFloat currentWeather.wind.speed) ]
+        , p [] [ text ("Wind Direction: " ++ String.fromInt currentWeather.wind.degrees) ]
+        ]
+
+
+cityName : CurrentWeather -> String
+cityName currentWeather =
+    currentWeather.name ++ ", " ++ currentWeather.sys.country
 
 
 baseView : Int -> Html msg -> { title : String, content : Html msg }
@@ -142,9 +188,6 @@ baseView cityId subView =
                 [ li [] [ a [ href (currentWeatherHref cityId) ] [ text "Current Weather" ] ]
                 , li [] [ a [ href (forecastHref cityId) ] [ text "Forecast" ] ]
                 ]
-            , h2
-                []
-                [ text ("City Id: " ++ String.fromInt cityId) ]
             , subView
             ]
     }
@@ -174,8 +217,34 @@ getCurrentWeather cityId =
 
 currentWeatherDecoder : Decode.Decoder CurrentWeather
 currentWeatherDecoder =
-    Decode.map CurrentWeather
+    Decode.map5 CurrentWeather
         (Decode.field "main" mainDecoder)
+        (Decode.field "coord" coordDecoder)
+        (Decode.field "wind" windDecoder)
+        (Decode.field "sys" sysDecoder)
+        (Decode.field "name" Decode.string)
+
+
+sysDecoder : Decode.Decoder Sys
+sysDecoder =
+    Decode.map3 Sys
+        (Decode.field "country" Decode.string)
+        (Decode.field "sunrise" Decode.int)
+        (Decode.field "sunset" Decode.int)
+
+
+windDecoder : Decode.Decoder Wind
+windDecoder =
+    Decode.map2 Wind
+        (Decode.field "speed" Decode.float)
+        (Decode.field "deg" Decode.int)
+
+
+coordDecoder : Decode.Decoder Coord
+coordDecoder =
+    Decode.map2 Coord
+        (Decode.field "lon" Decode.float)
+        (Decode.field "lat" Decode.float)
 
 
 mainDecoder : Decode.Decoder Main
