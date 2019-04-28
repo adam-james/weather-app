@@ -7,6 +7,7 @@ import Json.Decode as Decode
 import Page.City.Forecast as ForecastPage
 import Url
 import Url.Parser as Parser exposing ((</>))
+import WeatherIcon
 
 
 
@@ -47,14 +48,14 @@ type alias Sys =
 
 
 
--- TODO what is this list of Weather?
+-- TODO Maps icons
 
 
 type alias Weather =
     { id : Int
     , main : String
     , description : String
-    , icon : String
+    , icon : WeatherIcon.WeatherIcon
     }
 
 
@@ -192,25 +193,20 @@ firstWeather weathers =
             List.head weathers
 
         outer children =
-            section [ class "first-weather" ]
-                (h3 [] [ text "Icon stuff" ]
-                    :: children
-                )
+            section [ class "first-weather" ] children
     in
     case first of
         Nothing ->
             outer
                 [ p
                     []
-                    [ text "No first weather!" ]
+                    [ text "No weather icon!" ]
                 ]
 
         Just weather ->
             outer
-                [ p [] [ text ("Id: " ++ String.fromInt weather.id) ]
-                , p [] [ text ("Description: " ++ weather.description) ]
-                , p [] [ text ("Icon: " ++ weather.icon) ]
-                , p [] [ text ("Main: " ++ weather.main) ]
+                [ WeatherIcon.mapIcon weather.icon
+                , p [] [ text weather.description ]
                 ]
 
 
@@ -268,7 +264,7 @@ weatherDecoder =
         (Decode.field "id" Decode.int)
         (Decode.field "main" Decode.string)
         (Decode.field "description" Decode.string)
-        (Decode.field "icon" Decode.string)
+        (Decode.field "icon" WeatherIcon.decode)
 
 
 sysDecoder : Decode.Decoder Sys
