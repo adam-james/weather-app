@@ -4,7 +4,6 @@ import Html exposing (..)
 import Html.Attributes exposing (class, href)
 import Http
 import Json.Decode as Decode
-import Page.City.Forecast as ForecastPage
 import Url
 import Url.Parser as Parser exposing ((</>))
 import WeatherIcon
@@ -47,20 +46,12 @@ type alias Sys =
     }
 
 
-
--- TODO Maps icons
-
-
 type alias Weather =
     { id : Int
     , main : String
     , description : String
     , icon : WeatherIcon.WeatherIcon
     }
-
-
-
--- TODO There is also rain and snow in this, but it seems optional.
 
 
 type alias CurrentWeather =
