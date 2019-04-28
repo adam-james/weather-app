@@ -1,9 +1,12 @@
 module Page.City exposing (Model, Msg, init, update, view)
 
+import DisplayTime exposing (displayDateTime)
 import Html exposing (..)
 import Html.Attributes exposing (class, href)
 import Http
 import Json.Decode as Decode
+import Task
+import Time
 import Url
 import Url.Parser as Parser exposing ((</>))
 import WeatherIcon
@@ -67,17 +70,30 @@ type alias CurrentWeather =
 
 
 type alias Model =
-    { currentWeather : Request CurrentWeather }
+    { currentWeather : Request CurrentWeather
+    , timezone : Time.Zone
+    }
 
 
 init : Maybe Int -> ( Model, Cmd Msg )
 init maybeId =
     case maybeId of
         Nothing ->
-            ( { currentWeather = Loading }, Cmd.none )
+            ( { currentWeather = Loading
+              , timezone = Time.utc
+              }
+            , Cmd.none
+            )
 
         Just id ->
-            ( { currentWeather = Loading }, getCurrentWeather id )
+            ( { currentWeather = Loading
+              , timezone = Time.utc
+              }
+            , Cmd.batch
+                [ Task.perform SetTimezone Time.here
+                , getCurrentWeather id
+                ]
+            )
 
 
 
@@ -87,6 +103,7 @@ init maybeId =
 type Msg
     = NoOp
     | GotCurrentWeather (Result Http.Error CurrentWeather)
+    | SetTimezone Time.Zone
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -106,6 +123,9 @@ update msg model =
                     ( { model | currentWeather = Success currentWeather }
                     , Cmd.none
                     )
+
+        SetTimezone timezone ->
+            ( { model | timezone = timezone }, Cmd.none )
 
 
 
@@ -152,14 +172,14 @@ currentWeatherView model =
             p [] [ text "Something went wrong :(" ]
 
         Success currentWeather ->
-            tmpWeatherBreakdown currentWeather
+            tmpWeatherBreakdown model.timezone currentWeather
 
 
-tmpWeatherBreakdown : CurrentWeather -> Html msg
-tmpWeatherBreakdown currentWeather =
+tmpWeatherBreakdown : Time.Zone -> CurrentWeather -> Html msg
+tmpWeatherBreakdown timezone currentWeather =
     section []
         [ h2 [] [ text (cityName currentWeather) ]
-        , p [] [ text ("Time : " ++ String.fromInt currentWeather.datetime) ]
+        , p [] [ text ("Last updated: " ++ displayDateTime timezone currentWeather.datetime) ]
         , h3 [] [ text "Current Weather" ]
         , firstWeather currentWeather.weather
         , p [] [ text ("Temperature (F): " ++ String.fromFloat currentWeather.main.temp) ]
@@ -168,9 +188,6 @@ tmpWeatherBreakdown currentWeather =
         , p [] [ text ("Cloudiness (%): " ++ String.fromInt currentWeather.clouds.all) ]
         , p [] [ text ("Humidity: " ++ String.fromInt currentWeather.main.humidity) ]
         , p [] [ text ("Pressure: " ++ String.fromInt currentWeather.main.pressure) ]
-        , h3 [] [ text "Sunrise - Sunset Section" ]
-        , p [] [ text ("Sunrise: " ++ String.fromInt currentWeather.sys.sunrise) ]
-        , p [] [ text ("Sunset: " ++ String.fromInt currentWeather.sys.sunset) ]
         , h3 [] [ text "Wind Section" ]
         , p [] [ text ("Wind Speed: " ++ String.fromFloat currentWeather.wind.speed) ]
         , p [] [ text ("Wind Direction: " ++ String.fromInt currentWeather.wind.degrees) ]
