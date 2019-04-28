@@ -129,31 +129,6 @@ update msg model =
 
 
 
--- ROUTING
-
-
-type Route
-    = CurrentWeatherRoute Int
-    | Forecast Int
-
-
-routeParser : Parser.Parser (Route -> a) a
-routeParser =
-    Parser.oneOf
-        [ Parser.map CurrentWeatherRoute (Parser.s "city" </> Parser.int)
-        , Parser.map CurrentWeatherRoute
-            (Parser.s "city" </> Parser.int </> Parser.s "current-weather")
-        , Parser.map Forecast
-            (Parser.s "city" </> Parser.int </> Parser.s "forecast")
-        ]
-
-
-matchRoute : Url.Url -> Maybe Route
-matchRoute url =
-    Parser.parse routeParser url
-
-
-
 -- VIEW
 
 

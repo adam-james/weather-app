@@ -81,7 +81,6 @@ displayWeekday : Time.Zone -> Int -> String
 displayWeekday timezone seconds =
     seconds
         |> secondsToPosix
-        -- TODO use browser timezone
         |> Time.toWeekday timezone
         |> weekdayToString
 
