@@ -26,6 +26,34 @@ function handleError(err) {
 
 app.use(cors());
 
+// Forecast
+
+app.get("/forecast", async (req, res) => {
+  const { cityId } = req.query;
+
+  if (cityId == null) {
+    return res.status(422).json({ errors: { name: "City ID required" } });
+  }
+
+  const endpoint = "/forecast";
+  const url = getUrl(endpoint, cityId);
+
+  try {
+    const resp = await fetch(url);
+
+    if (resp.ok) {
+      const json = await resp.json();
+      res.json(json);
+    } else {
+      throw new Error("Response is not OK.");
+    }
+  } catch (err) {
+    handleError(err);
+  }
+});
+
+// Current Weather
+
 app.get("/current-weather", async (req, res) => {
   const { cityId } = req.query;
 
