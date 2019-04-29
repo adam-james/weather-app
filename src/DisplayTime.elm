@@ -32,6 +32,14 @@ displayDateTime timezone seconds =
         ++ time
 
 
+padNumber : String -> String
+padNumber str =
+    if String.length str == 1 then
+        "0" ++ str
+    else
+        str
+
+
 secondsToPosix : Int -> Time.Posix
 secondsToPosix seconds =
     seconds
@@ -48,9 +56,9 @@ displayTime timezone seconds =
         minute =
             displayMinute timezone seconds
     in
-    hour
+    (padNumber hour)
         ++ ":"
-        ++ minute
+        ++ (padNumber minute)
 
 
 displayMinute : Time.Zone -> Int -> String
