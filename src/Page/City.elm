@@ -1,5 +1,6 @@
 module Page.City exposing (Model, Msg, init, update, view)
 
+import City exposing (City, cityDecoder)
 import DisplayTime exposing (displayDateTime)
 import Html exposing (..)
 import Html.Attributes exposing (class, href)
@@ -19,13 +20,13 @@ import WeatherIcon
 type Request a
     = Loading
     | Success a
-    | Failure
+    | Failure Http.Error
 
 
 type alias Main =
     { temp : Float
-    , pressure : Int
-    , humidity : Int
+    , pressure : Float
+    , humidity : Float
     , tempMin : Float
     , tempMax : Float
     }
@@ -33,7 +34,7 @@ type alias Main =
 
 type alias Wind =
     { speed : Float
-    , degrees : Int
+    , degrees : Float
     }
 
 
@@ -63,15 +64,30 @@ type alias CurrentWeather =
     , sys : Sys
     , name : String
     , weather : List Weather
-    , visibility : Int
     , datetime : Int
     , clouds : Clouds
+    }
+
+
+type alias ForecastItem =
+    { datetime : Int
+    , weather : List Weather
+    , main : Main
+    , wind : Wind
+    , clouds : Clouds
+    }
+
+
+type alias Forecast =
+    { city : City
+    , items : List ForecastItem
     }
 
 
 type alias Model =
     { currentWeather : Request CurrentWeather
     , timezone : Time.Zone
+    , forecast : Request Forecast
     }
 
 
@@ -81,6 +97,7 @@ init maybeId =
         Nothing ->
             ( { currentWeather = Loading
               , timezone = Time.utc
+              , forecast = Loading
               }
             , Cmd.none
             )
@@ -88,10 +105,12 @@ init maybeId =
         Just id ->
             ( { currentWeather = Loading
               , timezone = Time.utc
+              , forecast = Loading
               }
             , Cmd.batch
                 [ Task.perform SetTimezone Time.here
                 , getCurrentWeather id
+                , getForecast id
                 ]
             )
 
@@ -103,6 +122,7 @@ init maybeId =
 type Msg
     = NoOp
     | GotCurrentWeather (Result Http.Error CurrentWeather)
+    | GotForecast (Result Http.Error Forecast)
     | SetTimezone Time.Zone
 
 
@@ -114,13 +134,25 @@ update msg model =
 
         GotCurrentWeather result ->
             case result of
-                Err _ ->
-                    ( { model | currentWeather = Failure }
+                Err error ->
+                    ( { model | currentWeather = Failure error }
                     , Cmd.none
                     )
 
                 Ok currentWeather ->
                     ( { model | currentWeather = Success currentWeather }
+                    , Cmd.none
+                    )
+
+        GotForecast result ->
+            case result of
+                Err error ->
+                    ( { model | forecast = Failure error }
+                    , Cmd.none
+                    )
+
+                Ok forecast ->
+                    ( { model | forecast = Success forecast }
                     , Cmd.none
                     )
 
@@ -134,7 +166,43 @@ update msg model =
 
 view : Model -> { title : String, content : Html msg }
 view model =
-    baseView (currentWeatherView model)
+    baseView
+        (div
+            []
+            [ currentWeatherView model
+            , requestView model.forecast (tmpForecastView model.timezone)
+            ]
+        )
+
+
+requestView : Request a -> (a -> Html msg) -> Html msg
+requestView request render =
+    case request of
+        Loading ->
+            p [] [ text "Loading..." ]
+
+        Failure _ ->
+            p [] [ text "Something went wrong :(" ]
+
+        Success data ->
+            render data
+
+
+tmpForecastView : Time.Zone -> Forecast -> Html msg
+tmpForecastView timezone forecast =
+    section []
+        [ h3 [] [ text "Forecast" ]
+        , ul [] (List.map (tmpForecastItem timezone) forecast.items)
+        ]
+
+
+tmpForecastItem : Time.Zone -> ForecastItem -> Html msg
+tmpForecastItem timezone item =
+    li []
+        [ h4 [] [ text (DisplayTime.displayDateTime timezone item.datetime) ]
+        , firstWeather item.weather
+        , p [] [ text ("Temperature: " ++ String.fromFloat item.main.temp) ]
+        ]
 
 
 currentWeatherView : Model -> Html msg
@@ -143,7 +211,7 @@ currentWeatherView model =
         Loading ->
             p [] [ text "Loading..." ]
 
-        Failure ->
+        Failure _ ->
             p [] [ text "Something went wrong :(" ]
 
         Success currentWeather ->
@@ -154,18 +222,14 @@ tmpWeatherBreakdown : Time.Zone -> CurrentWeather -> Html msg
 tmpWeatherBreakdown timezone currentWeather =
     section []
         [ h2 [] [ text (cityName currentWeather) ]
-        , p [] [ text ("Last updated: " ++ displayDateTime timezone currentWeather.datetime) ]
         , h3 [] [ text "Current Weather" ]
         , firstWeather currentWeather.weather
         , p [] [ text ("Temperature (F): " ++ String.fromFloat currentWeather.main.temp) ]
         , p [] [ text ("High (F): " ++ String.fromFloat currentWeather.main.tempMax) ]
         , p [] [ text ("Low (F): " ++ String.fromFloat currentWeather.main.tempMin) ]
-        , p [] [ text ("Cloudiness (%): " ++ String.fromInt currentWeather.clouds.all) ]
-        , p [] [ text ("Humidity: " ++ String.fromInt currentWeather.main.humidity) ]
-        , p [] [ text ("Pressure: " ++ String.fromInt currentWeather.main.pressure) ]
-        , h3 [] [ text "Wind Section" ]
+        , h3 [] [ text "Wind" ]
         , p [] [ text ("Wind Speed: " ++ String.fromFloat currentWeather.wind.speed) ]
-        , p [] [ text ("Wind Direction: " ++ String.fromInt currentWeather.wind.degrees) ]
+        , p [] [ text ("Wind Direction: " ++ String.fromFloat currentWeather.wind.degrees) ]
         ]
 
 
@@ -217,15 +281,44 @@ getCurrentWeather cityId =
         }
 
 
+getForecast : Int -> Cmd Msg
+getForecast cityId =
+    Http.get
+        { url = "http://localhost:5000/forecast?cityId=" ++ String.fromInt cityId
+        , expect = Http.expectJson GotForecast forecastDecoder
+        }
+
+
+forecastDecoder : Decode.Decoder Forecast
+forecastDecoder =
+    Decode.map2 Forecast
+        (Decode.field "city" cityDecoder)
+        (Decode.field "list" forecastItemsDecoder)
+
+
+forecastItemsDecoder : Decode.Decoder (List ForecastItem)
+forecastItemsDecoder =
+    Decode.list forecastItemDecoder
+
+
+forecastItemDecoder : Decode.Decoder ForecastItem
+forecastItemDecoder =
+    Decode.map5 ForecastItem
+        (Decode.field "dt" Decode.int)
+        (Decode.field "weather" weathersDecoder)
+        (Decode.field "main" mainDecoder)
+        (Decode.field "wind" windDecoder)
+        (Decode.field "clouds" cloudsDecoder)
+
+
 currentWeatherDecoder : Decode.Decoder CurrentWeather
 currentWeatherDecoder =
-    Decode.map8 CurrentWeather
+    Decode.map7 CurrentWeather
         (Decode.field "main" mainDecoder)
         (Decode.field "wind" windDecoder)
         (Decode.field "sys" sysDecoder)
         (Decode.field "name" Decode.string)
         (Decode.field "weather" weathersDecoder)
-        (Decode.field "visibility" Decode.int)
         (Decode.field "dt" Decode.int)
         (Decode.field "clouds" cloudsDecoder)
 
@@ -262,14 +355,14 @@ windDecoder : Decode.Decoder Wind
 windDecoder =
     Decode.map2 Wind
         (Decode.field "speed" Decode.float)
-        (Decode.field "deg" Decode.int)
+        (Decode.field "deg" Decode.float)
 
 
 mainDecoder : Decode.Decoder Main
 mainDecoder =
     Decode.map5 Main
         (Decode.field "temp" Decode.float)
-        (Decode.field "pressure" Decode.int)
-        (Decode.field "humidity" Decode.int)
+        (Decode.field "pressure" Decode.float)
+        (Decode.field "humidity" Decode.float)
         (Decode.field "temp_min" Decode.float)
         (Decode.field "temp_max" Decode.float)

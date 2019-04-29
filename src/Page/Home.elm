@@ -1,6 +1,5 @@
 module Page.Home exposing
-    ( City
-    , Model
+    ( Model
     , Msg(..)
     , init
     , update
@@ -9,6 +8,7 @@ module Page.Home exposing
 
 import Browser
 import Browser.Navigation as Nav
+import City exposing (City, citiesDecoder)
 import Combobox
 import Html exposing (..)
 import Html.Attributes as Attrs
@@ -19,10 +19,6 @@ import Json.Decode as Decode
 
 
 ---- MODEL ----
-
-
-type alias City =
-    { id : Int, name : String, country : String }
 
 
 type alias Model =
@@ -270,16 +266,3 @@ getCities query =
         { url = "http://localhost:5000/cities?name=" ++ query
         , expect = Http.expectJson GotCities citiesDecoder
         }
-
-
-cityDecoder : Decode.Decoder City
-cityDecoder =
-    Decode.map3 City
-        (Decode.field "id" Decode.int)
-        (Decode.field "name" Decode.string)
-        (Decode.field "country" Decode.string)
-
-
-citiesDecoder : Decode.Decoder (List City)
-citiesDecoder =
-    Decode.list cityDecoder
