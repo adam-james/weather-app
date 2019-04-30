@@ -78,6 +78,12 @@ ul {
   font-size: 48px;
 }
 
+.temp {
+  position: relative;
+  top: -12px;
+  left: 16px;
+}
+
 /* Weather Icons */
 /* TODO clean up to only include those you are using */
 /*!

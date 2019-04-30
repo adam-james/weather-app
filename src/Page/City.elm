@@ -169,8 +169,7 @@ view model =
     baseView
         (div
             []
-            [ currentWeatherView model
-            , requestView model.forecast (tmpForecastView model.timezone)
+            [ requestView model.forecast (tmpForecastView model.timezone)
             ]
         )
 
@@ -191,7 +190,8 @@ requestView request render =
 tmpForecastView : Time.Zone -> Forecast -> Html msg
 tmpForecastView timezone forecast =
     section []
-        [ h3 [] [ text "Forecast" ]
+        [ h2 [] [ text (forecast.city.name ++ ", " ++ forecast.city.country) ]
+        , h3 [] [ text "Forecast" ]
         , ul [] (List.map (tmpForecastItem timezone) forecast.items)
         ]
 
@@ -199,9 +199,11 @@ tmpForecastView timezone forecast =
 tmpForecastItem : Time.Zone -> ForecastItem -> Html msg
 tmpForecastItem timezone item =
     li []
-        [ h4 [] [ text (DisplayTime.displayDateTime timezone item.datetime) ]
-        , firstWeather item.weather
-        , p [] [ text ("Temperature: " ++ String.fromFloat item.main.temp) ]
+        [ p [] [ text (DisplayTime.displayDateTime timezone item.datetime) ]
+        , p []
+            [ firstWeather item.weather
+            , span [ class "temp" ] [ text (String.fromFloat item.main.temp ++ " F°") ]
+            ]
         ]
 
 
@@ -240,7 +242,7 @@ firstWeather weathers =
             List.head weathers
 
         outer children =
-            section [ class "first-weather" ] children
+            span [ class "first-weather" ] children
     in
     case first of
         Nothing ->
@@ -253,7 +255,6 @@ firstWeather weathers =
         Just weather ->
             outer
                 [ WeatherIcon.mapIcon weather.icon
-                , p [] [ text weather.description ]
                 ]
 
 
