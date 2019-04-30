@@ -19,7 +19,7 @@ function getUrl(endpoint, cityId) {
   return baseUrl + endpoint + `?id=${cityId}&APPID=${API_KEY}&units=imperial`;
 }
 
-function handleError(err) {
+function handleError(res, err) {
   console.log(err);
   res.status(500).json({ error: "An error occurred" });
 }
@@ -48,7 +48,7 @@ app.get("/forecast", async (req, res) => {
       throw new Error("Response is not OK.");
     }
   } catch (err) {
-    handleError(err);
+    handleError(res, err);
   }
 });
 
@@ -74,7 +74,7 @@ app.get("/current-weather", async (req, res) => {
       throw new Error("Response is not OK.");
     }
   } catch (err) {
-    handleError(err);
+    handleError(res, err);
   }
 });
 
@@ -92,7 +92,7 @@ app.get("/cities", async (req, res) => {
     const cities = await City.find({ name: regexp }).limit(10);
     res.json(cities);
   } catch (err) {
-    handleError(err);
+    handleError(res, err);
   }
 });
 
