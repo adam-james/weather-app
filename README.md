@@ -937,4 +937,4 @@ Remember to disable [safe write](https://webpack.github.io/docs/webpack-dev-serv
 
 ## Attributions
 
-Icons are from https://erikflowers.github.io/weather-icons/.
+Icons are from https://dribbble.com/shots/2923788-Free-Weather-Icons.

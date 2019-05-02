@@ -100,65 +100,65 @@ fromString str =
 
 icon : String -> Html msg
 icon className =
-    i [ class className, class "wi", class "weather-icon" ] []
+    i [ class className, class "weather-icon" ] []
 
 
 mapIcon : WeatherIcon -> Html msg
 mapIcon weatherIcon =
     case weatherIcon of
         ClearSkyDay ->
-            icon "wi-day-sunny"
+            icon "clear-sky-day"
 
         ClearSkyNight ->
-            icon "wi-night-clear"
+            icon "clear-sky-night"
 
         FewCloudsDay ->
-            icon "wi-day-cloudy"
+            icon "few-clouds-day"
 
         FewCloudsNight ->
-            icon "wi-night-cloudy"
+            icon "few-clouds-night"
 
         ScatteredCloudsDay ->
-            icon "wi-cloud"
+            icon "scattered-clouds"
 
         ScatteredCloudsNight ->
-            icon "wi-cloud"
+            icon "scattered-clouds"
 
         BrokenCloudsDay ->
-            icon "wi-cloudy"
+            icon "broken-clouds"
 
         BrokenCloudsNight ->
-            icon "wi-cloudy"
+            icon "broken-clouds"
 
         ShowerRainDay ->
-            icon "wi-day-rain"
+            icon "shower-rain-day"
 
         ShowerRainNight ->
-            icon "wi-night-rain"
+            icon "shower-rain-night"
 
         RainDay ->
-            icon "wi-day-rain"
+            icon "rain-day"
 
         RainNight ->
-            icon "wi-night-rain"
+            icon "rain-night"
 
         ThunderstormDay ->
-            icon "wi-thunderstorm"
+            icon "thunderstorm-day"
 
         ThunderstormNight ->
-            icon "wi-thunderstorm"
+            icon "thunderstorm-night"
 
         SnowDay ->
-            icon "wi-snow"
+            icon "snow-day"
 
         SnowNight ->
-            icon "wi-snow"
+            icon "snow-night"
 
         MistDay ->
-            icon "wi-fog"
+            icon "mist-day"
 
         MistNight ->
-            icon "wi-fog"
+            icon "mist-night"
 
         NoIcon ->
             span [] [ text "No icon" ]
