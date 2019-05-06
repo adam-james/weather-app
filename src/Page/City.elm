@@ -190,21 +190,52 @@ requestView request render =
 tmpForecastView : Time.Zone -> Forecast -> Html msg
 tmpForecastView timezone forecast =
     section []
-        [ h2 [] [ text (forecast.city.name ++ ", " ++ forecast.city.country) ]
-        , h3 [] [ text "Forecast" ]
-        , ul [] (List.map (tmpForecastItem timezone) forecast.items)
+        [ h2 [ class "page-title" ] [ text "5 Day Forecast" ]
+        , ul [ class "forecast-list" ] (List.map (tmpForecastItem timezone) forecast.items)
         ]
 
 
 tmpForecastItem : Time.Zone -> ForecastItem -> Html msg
 tmpForecastItem timezone item =
-    li []
-        [ p [] [ text (DisplayTime.displayDateTime timezone item.datetime) ]
-        , p []
-            [ firstWeather item.weather
-            , span [ class "temp" ] [ text (String.fromFloat item.main.temp ++ " F°") ]
-            ]
+    li [ class "forecast-list__item" ]
+        [ h3 [ class "forecast__date" ] [ text (DisplayTime.displayDate timezone item.datetime) ]
+        , forecastInfo item
         ]
+
+
+forecastInfo : ForecastItem -> Html msg
+forecastInfo item =
+    let
+        first =
+            List.head item.weather
+
+        outer children =
+            section [ class "forecast__info" ] children
+    in
+    case first of
+        Nothing ->
+            outer
+                [ section
+                    []
+                    [ text "No weather icon!" ]
+                ]
+
+        Just weather ->
+            outer
+                [ div [ class "forecast__icon-container" ] [ WeatherIcon.mapIcon weather.icon ]
+                , div [ class "forecast__temps" ]
+                    [ p [ class "forecast__current-temp" ] [ text (String.fromInt (round item.main.temp) ++ " F°") ]
+                    , p [ class "forecast__high-low" ]
+                        [ text (highLow item.main) ]
+                    ]
+                ]
+
+
+highLow : Main -> String
+highLow itemMain =
+    (String.fromInt (round itemMain.tempMin) ++ " F°")
+        ++ " | "
+        ++ (String.fromInt (round itemMain.tempMax) ++ " F°")
 
 
 currentWeatherView : Model -> Html msg
@@ -225,7 +256,6 @@ tmpWeatherBreakdown timezone currentWeather =
     section []
         [ h2 [] [ text (cityName currentWeather) ]
         , h3 [] [ text "Current Weather" ]
-        , firstWeather currentWeather.weather
         , p [] [ text ("Temperature (F): " ++ String.fromFloat currentWeather.main.temp) ]
         , p [] [ text ("High (F): " ++ String.fromFloat currentWeather.main.tempMax) ]
         , p [] [ text ("Low (F): " ++ String.fromFloat currentWeather.main.tempMin) ]
@@ -233,29 +263,6 @@ tmpWeatherBreakdown timezone currentWeather =
         , p [] [ text ("Wind Speed: " ++ String.fromFloat currentWeather.wind.speed) ]
         , p [] [ text ("Wind Direction: " ++ String.fromFloat currentWeather.wind.degrees) ]
         ]
-
-
-firstWeather : List Weather -> Html msg
-firstWeather weathers =
-    let
-        first =
-            List.head weathers
-
-        outer children =
-            span [ class "first-weather" ] children
-    in
-    case first of
-        Nothing ->
-            outer
-                [ p
-                    []
-                    [ text "No weather icon!" ]
-                ]
-
-        Just weather ->
-            outer
-                [ WeatherIcon.mapIcon weather.icon
-                ]
 
 
 cityName : CurrentWeather -> String

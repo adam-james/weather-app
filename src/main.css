@@ -10,32 +10,23 @@
 }
 
 body {
-  font-family: "Source Sans Pro", "Trebuchet MS", "Lucida Grande",
-    "Bitstream Vera Sans", "Helvetica Neue", sans-serif;
+  font-family: "Lato", sans-serif;
+  font-size: 16px;
   margin: 0;
   text-align: center;
-  background-color: #3290e8;
+  background-color: #313131;
   color: #ffffff;
 }
 
-h1 {
-  font-size: 30px;
-}
-
-img {
-  margin: 20px 0;
-  max-width: 200px;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.page-title {
+  font-size: 1.5rem;
+  margin-top: 1.25em;
+  margin-bottom: 1.5em;
 }
 
 .page-header {
   height: 70px;
-  background-color: #bbdefb;
+  background-color: #202020;
 }
 
 .page-header__nav {
@@ -46,7 +37,6 @@ ul {
 }
 
 .page-header__nav-item {
-  color: #000;
   font-size: 18;
   text-decoration: none;
   height: 100%;
@@ -54,7 +44,7 @@ ul {
 }
 
 .page-header__nav-link {
-  color: #000;
+  color: #ffffff;
   font-size: 24px;
   text-decoration: none;
 }
@@ -75,18 +65,48 @@ ul {
   display: block;
 }
 
-.temp {
-  position: relative;
-  top: -20px;
-  left: 16px;
+.forecast-list {
+  list-style: none;
+  padding: 0 1em;
+  margin: 0;
+}
+
+.forecast-list__item {
+  background-color: #2078dc;
+  border-radius: 2px;
+  padding: 0.75em;
+  margin: 1.25em 0;
+  background-image: linear-gradient(-180deg, #54c0ff 0%, #2078dc 100%);
+}
+
+.forecast__date {
+  margin: 0;
+  font-size: 1.125em;
+}
+
+.forecast__info {
+  padding: 1.25em 1.25em 0 1.25em;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.forecast__current-temp {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin: 0;
+}
+
+.forecast__high-low {
+  margin-top: 0.6em;
+  font-size: 0.75rem;
 }
 
 .weather-icon {
   display: inline-block;
   background-size: contain;
   background-repeat: no-repeat;
-  height: 48px;
-  width: 78px;
+  height: 68px;
+  width: 68px;
 }
 
 /* TODO Use a sprite instead of individual images. */

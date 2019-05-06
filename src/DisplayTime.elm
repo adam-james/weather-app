@@ -1,4 +1,4 @@
-module DisplayTime exposing (displayDateTime)
+module DisplayTime exposing (displayDateTime, displayDate)
 
 import Time
 
@@ -21,6 +21,25 @@ displayDateTime timezone seconds =
         time =
             displayTime timezone seconds
     in
+    displayDate timezone seconds
+        ++ time
+
+
+displayDate : Time.Zone -> Int -> String
+displayDate timezone seconds =
+    let
+        weekday =
+            displayWeekday timezone seconds
+
+        month =
+            displayMonth timezone seconds
+
+        day =
+            displayDay timezone seconds
+
+        year =
+            displayYear timezone seconds
+    in
     weekday
         ++ ", "
         ++ month
@@ -29,13 +48,13 @@ displayDateTime timezone seconds =
         ++ ", "
         ++ year
         ++ " "
-        ++ time
 
 
 padNumber : String -> String
 padNumber str =
     if String.length str == 1 then
         "0" ++ str
+
     else
         str
 
@@ -56,9 +75,9 @@ displayTime timezone seconds =
         minute =
             displayMinute timezone seconds
     in
-    (padNumber hour)
+    padNumber hour
         ++ ":"
-        ++ (padNumber minute)
+        ++ padNumber minute
 
 
 displayMinute : Time.Zone -> Int -> String
