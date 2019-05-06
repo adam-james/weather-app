@@ -2,8 +2,8 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
 import Browser.Navigation as Nav
-import Html
-import Page
+import Html exposing (..)
+import Html.Attributes exposing (class, href)
 import Page.About as AboutPage
 import Page.City as CityPage
 import Page.Home as HomePage
@@ -146,16 +146,47 @@ view model =
                 mappedContent =
                     Html.map GotHomeMsg content
             in
-            Page.view { title = title, content = mappedContent }
+            pageView model { title = title, content = mappedContent }
 
         Just (City _) ->
-            Page.view (CityPage.view model.cityModel)
+            pageView model (CityPage.view model.cityModel)
 
         Just About ->
-            Page.view AboutPage.view
+            pageView model AboutPage.view
 
         Nothing ->
-            Page.view NotFoundPage.view
+            pageView model NotFoundPage.view
+
+
+pageView : Model -> { title : String, content : Html msg } -> Browser.Document msg
+pageView model page =
+    { title = "Weather App - " ++ page.title
+    , body =
+        [ pageHeader model
+        , page.content
+        ]
+    }
+
+
+pageHeader : Model -> Html msg
+pageHeader model =
+    let
+    -- TODO improve this
+        link =
+            case model.cityModel.forecast of
+                CityPage.Success { city } ->
+                    [ a [ href "/", class "page-header__nav-link" ]
+                        [ text (city.name ++ ", " ++ city.country) ]
+                    ]
+
+                _ ->
+                    [ span [] [] ]
+    in
+    header [ class "page-header" ]
+        [ ul [ class "page-header__nav" ]
+            [ li [ class "page-header__nav-item" ] link
+            ]
+        ]
 
 
 

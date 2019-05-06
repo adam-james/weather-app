@@ -1,4 +1,11 @@
-module Page.City exposing (Model, Msg, init, update, view)
+module Page.City exposing
+    ( Model
+    , Msg
+    , Request(..)
+    , init
+    , update
+    , view
+    )
 
 import City exposing (City, cityDecoder)
 import DisplayTime exposing (displayDateTime)
