@@ -49,20 +49,68 @@ body {
   text-decoration: none;
 }
 
+.search-form {
+  padding: 0 1.125em;
+}
+
+.search-form__button {
+  font-size: 1rem;
+  color: #fff;
+  background-color: #2078dc;
+  border: none;
+  margin-top: 1em;
+  padding: 1em;
+  border-radius: 1px;
+  width: 100%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
 .options__option {
   cursor: pointer;
 }
 
-.options__option:hover {
-  color: red;
-}
-
-.options__option--active {
-  color: red;
+.combobox__input {
+  font-size: 1.125rem;
+  color: #202020;
+  line-height: 2.6666em;
+  padding-left: 0.6em;
+  border: none;
+  border-radius: 1px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .combobox__label {
   display: block;
+  font-size: 1.5rem;
+  margin-top: 0.8em;
+  margin-bottom: 1em;
+}
+
+.combobox__options {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.combobox__option {
+  border: 1px solid #fff;
+  font-size: 1.125rem;
+  padding: 0.6em;
+  cursor: pointer;
+}
+
+.combobox__option:last-child {
+  border-radius: 0 0 1px 1px;
+}
+
+.combobox__option:hover {
+  background-color: #202020;
+}
+
+.combobox__option--active {
+  background-color: #202020;
 }
 
 .forecast-list {

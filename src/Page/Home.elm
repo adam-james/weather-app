@@ -204,7 +204,7 @@ view model =
 
 content : Model -> Html Msg
 content model =
-    form [ Evnts.onSubmit Submit ]
+    form [ Evnts.onSubmit Submit, Attrs.class "search-form" ]
         [ Combobox.container
             model.options
             listitemId
@@ -217,7 +217,7 @@ content model =
                 ]
             , Combobox.listbox model.options (viewOptions model)
             ]
-        , button [] [ text "Go" ]
+        , button [ Attrs.class "search-form__button" ] [ text "Show Weather" ]
         ]
 
 

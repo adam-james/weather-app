@@ -123,6 +123,7 @@ textbox model attrs =
             [ Attrs.type_ "text"
             , Attrs.autocomplete False
             , ariaAutocomplete "list"
+            , Attrs.class "combobox__input"
             ]
 
         ownAttrs =
@@ -149,7 +150,12 @@ listboxId =
 
 listbox : Model a -> List (Html msg) -> Html msg
 listbox model children =
-    ul [ Attrs.id listboxId, role "listbox" ] children
+    ul
+        [ Attrs.id listboxId
+        , role "listbox"
+        , Attrs.class "combobox__options"
+        ]
+        children
 
 
 labelId : String
@@ -167,7 +173,7 @@ option model getId getText getAttrs item =
     let
         -- TODO allow classnames to be specified
         baseClass =
-            "options__option"
+            "combobox__option"
 
         ( class, selected ) =
             case model of
@@ -175,7 +181,7 @@ option model getId getText getAttrs item =
                     case options.activeOption of
                         Just active ->
                             if item == active then
-                                ( baseClass ++ " options__option--active", "true" )
+                                ( baseClass ++ " combobox__option--active", "true" )
 
                             else
                                 ( baseClass, "false" )

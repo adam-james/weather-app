@@ -202,6 +202,10 @@ tmpForecastView timezone forecast =
         ]
 
 
+
+-- TODO group forecast items by day
+
+
 tmpForecastItem : Time.Zone -> ForecastItem -> Html msg
 tmpForecastItem timezone item =
     li [ class "forecast-list__item" ]
@@ -224,7 +228,7 @@ forecastInfo item =
             outer
                 [ section
                     []
-                    [ text "No weather icon!" ]
+                    [ text "No data" ]
                 ]
 
         Just weather ->
