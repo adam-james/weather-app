@@ -1,10 +1,20 @@
-module City exposing (City, cityDecoder, citiesDecoder)
+module City exposing
+    ( City
+    , citiesDecoder
+    , cityDecoder
+    , fullName
+    )
 
 import Json.Decode as Decode
 
 
 type alias City =
     { id : Int, name : String, country : String }
+
+
+fullName : City -> String
+fullName city =
+    city.name ++ ", " ++ city.country
 
 
 cityDecoder : Decode.Decoder City

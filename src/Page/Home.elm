@@ -204,21 +204,35 @@ view model =
 
 content : Model -> Html Msg
 content model =
-    form [ Evnts.onSubmit Submit, Attrs.class "search-form" ]
-        [ Combobox.container
-            model.options
-            listitemId
-            [ Combobox.comboboxLabel "Find a city"
-            , Combobox.textbox model.options
-                [ Evnts.onInput Input
-                , Evnts.on "keydown" <| keyDecoder
-                , Attrs.value (inputValue model)
-                , Evnts.onBlur Blur
+    let
+        outer =
+            form [ Evnts.onSubmit Submit, Attrs.class "search-form" ]
+
+        combobox =
+            Combobox.container
+                model.options
+                listitemId
+                [ Combobox.comboboxLabel "Find a city"
+                , Combobox.textbox model.options
+                    [ Evnts.onInput Input
+                    , Evnts.on "keydown" <| keyDecoder
+                    , Attrs.value (inputValue model)
+                    , Evnts.onBlur Blur
+                    ]
+                , Combobox.listbox model.options (viewOptions model)
                 ]
-            , Combobox.listbox model.options (viewOptions model)
-            ]
-        , button [ Attrs.class "search-form__button" ] [ text "Show Weather" ]
-        ]
+    in
+    case model.options of
+        Combobox.Selected _ ->
+            outer
+                [ combobox
+                , button [ Attrs.class "search-form__button" ] [ text "Show Weather" ]
+                ]
+
+        _ ->
+            outer
+                [ combobox
+                ]
 
 
 viewOptions : Model -> List (Html Msg)
@@ -230,7 +244,7 @@ viewOptions model =
                     (Combobox.option
                         model.options
                         listitemId
-                        .name
+                        City.fullName
                         (\city -> [ Evnts.onMouseDown (ClickCity city) ])
                     )
 
@@ -245,7 +259,7 @@ inputValue : Model -> String
 inputValue model =
     case model.options of
         Combobox.Selected selected ->
-            selected.name
+            City.fullName selected
 
         _ ->
             model.textInput
