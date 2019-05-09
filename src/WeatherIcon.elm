@@ -1,101 +1,8 @@
-module WeatherIcon exposing (WeatherIcon(..), decode, mapIcon)
+module WeatherIcon exposing (mapIcon)
 
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Json.Decode as Decode
-
-
-type WeatherIcon
-    = ClearSkyDay
-    | ClearSkyNight
-    | FewCloudsDay
-    | FewCloudsNight
-    | ScatteredCloudsDay
-    | ScatteredCloudsNight
-    | BrokenCloudsDay
-    | BrokenCloudsNight
-    | ShowerRainDay
-    | ShowerRainNight
-    | RainDay
-    | RainNight
-    | ThunderstormDay
-    | ThunderstormNight
-    | SnowDay
-    | SnowNight
-    | MistDay
-    | MistNight
-    | NoIcon
-
-
-decode : Decode.Decoder WeatherIcon
-decode =
-    let
-        convert : String -> Decode.Decoder WeatherIcon
-        convert raw =
-            Decode.succeed (fromString raw)
-    in
-    Decode.string |> Decode.andThen convert
-
-
-fromString : String -> WeatherIcon
-fromString str =
-    case str of
-        "01d" ->
-            ClearSkyDay
-
-        "01n" ->
-            ClearSkyNight
-
-        "02d" ->
-            FewCloudsDay
-
-        "02n" ->
-            FewCloudsNight
-
-        "03d" ->
-            ScatteredCloudsDay
-
-        "03n" ->
-            ScatteredCloudsNight
-
-        "04d" ->
-            BrokenCloudsDay
-
-        "04n" ->
-            BrokenCloudsNight
-
-        "09d" ->
-            ShowerRainDay
-
-        "09n" ->
-            ShowerRainNight
-
-        "10d" ->
-            RainDay
-
-        "10n" ->
-            RainNight
-
-        "11d" ->
-            ThunderstormDay
-
-        "11n" ->
-            ThunderstormNight
-
-        "13d" ->
-            SnowDay
-
-        "13n" ->
-            SnowNight
-
-        "50d" ->
-            MistDay
-
-        "50n" ->
-            MistNight
-
-        _ ->
-            NoIcon
 
 
 icon : String -> Html msg
@@ -103,62 +10,62 @@ icon className =
     i [ class className, class "weather-icon" ] []
 
 
-mapIcon : WeatherIcon -> Html msg
+mapIcon : String -> Html msg
 mapIcon weatherIcon =
     case weatherIcon of
-        ClearSkyDay ->
+        "01d" ->
             icon "clear-sky-day"
 
-        ClearSkyNight ->
+        "01n" ->
             icon "clear-sky-night"
 
-        FewCloudsDay ->
+        "02d" ->
             icon "few-clouds-day"
 
-        FewCloudsNight ->
+        "02n" ->
             icon "few-clouds-night"
 
-        ScatteredCloudsDay ->
+        "03d" ->
             icon "scattered-clouds"
 
-        ScatteredCloudsNight ->
+        "03n" ->
             icon "scattered-clouds"
 
-        BrokenCloudsDay ->
+        "04d" ->
             icon "broken-clouds"
 
-        BrokenCloudsNight ->
+        "04n" ->
             icon "broken-clouds"
 
-        ShowerRainDay ->
+        "09d" ->
             icon "shower-rain-day"
 
-        ShowerRainNight ->
+        "09n" ->
             icon "shower-rain-night"
 
-        RainDay ->
+        "10d" ->
             icon "rain-day"
 
-        RainNight ->
+        "10n" ->
             icon "rain-night"
 
-        ThunderstormDay ->
+        "11d" ->
             icon "thunderstorm-day"
 
-        ThunderstormNight ->
+        "11n" ->
             icon "thunderstorm-night"
 
-        SnowDay ->
+        "13d" ->
             icon "snow-day"
 
-        SnowNight ->
+        "13n" ->
             icon "snow-night"
 
-        MistDay ->
+        "50d" ->
             icon "mist-day"
 
-        MistNight ->
+        "50n" ->
             icon "mist-night"
 
-        NoIcon ->
+        _ ->
             span [] [ text "No icon" ]

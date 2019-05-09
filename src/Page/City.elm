@@ -9,6 +9,13 @@ module Page.City exposing
 
 import City exposing (City, cityDecoder)
 import DisplayTime exposing (displayDateTime)
+import Forecast
+    exposing
+        ( Forecast
+        , ForecastItem
+        , Main
+        , forecastDecoder
+        )
 import Html exposing (..)
 import Html.Attributes exposing (class, href)
 import Http
@@ -30,70 +37,8 @@ type Request a
     | Failure Http.Error
 
 
-type alias Main =
-    { temp : Float
-    , pressure : Float
-    , humidity : Float
-    , tempMin : Float
-    , tempMax : Float
-    }
-
-
-type alias Wind =
-    { speed : Float
-    , degrees : Float
-    }
-
-
-type alias Clouds =
-    { all : Int
-    }
-
-
-type alias Sys =
-    { country : String
-    , sunrise : Int
-    , sunset : Int
-    }
-
-
-type alias Weather =
-    { id : Int
-    , main : String
-    , description : String
-    , icon : WeatherIcon.WeatherIcon
-    }
-
-
-type alias CurrentWeather =
-    { main : Main
-    , wind : Wind
-    , sys : Sys
-    , name : String
-    , weather : List Weather
-    , datetime : Int
-    , clouds : Clouds
-    }
-
-
-type alias ForecastItem =
-    { datetime : Int
-    , weather : List Weather
-    , main : Main
-    , wind : Wind
-    , clouds : Clouds
-    }
-
-
-type alias Forecast =
-    { city : City
-    , items : List ForecastItem
-    }
-
-
 type alias Model =
-    { currentWeather : Request CurrentWeather
-    , timezone : Time.Zone
+    { timezone : Time.Zone
     , forecast : Request Forecast
     }
 
@@ -102,21 +47,18 @@ init : Maybe Int -> ( Model, Cmd Msg )
 init maybeId =
     case maybeId of
         Nothing ->
-            ( { currentWeather = Loading
-              , timezone = Time.utc
+            ( { timezone = Time.utc
               , forecast = Loading
               }
             , Cmd.none
             )
 
         Just id ->
-            ( { currentWeather = Loading
-              , timezone = Time.utc
+            ( { timezone = Time.utc
               , forecast = Loading
               }
             , Cmd.batch
                 [ Task.perform SetTimezone Time.here
-                , getCurrentWeather id
                 , getForecast id
                 ]
             )
@@ -128,7 +70,6 @@ init maybeId =
 
 type Msg
     = NoOp
-    | GotCurrentWeather (Result Http.Error CurrentWeather)
     | GotForecast (Result Http.Error Forecast)
     | SetTimezone Time.Zone
 
@@ -138,18 +79,6 @@ update msg model =
     case msg of
         NoOp ->
             ( model, Cmd.none )
-
-        GotCurrentWeather result ->
-            case result of
-                Err error ->
-                    ( { model | currentWeather = Failure error }
-                    , Cmd.none
-                    )
-
-                Ok currentWeather ->
-                    ( { model | currentWeather = Success currentWeather }
-                    , Cmd.none
-                    )
 
         GotForecast result ->
             case result of
@@ -218,7 +147,7 @@ forecastInfo : ForecastItem -> Html msg
 forecastInfo item =
     let
         first =
-            List.head item.weather
+            List.head item.weathers
 
         outer children =
             section [ class "forecast__info" ] children
@@ -249,38 +178,6 @@ highLow itemMain =
         ++ (String.fromInt (round itemMain.tempMax) ++ " F°")
 
 
-currentWeatherView : Model -> Html msg
-currentWeatherView model =
-    case model.currentWeather of
-        Loading ->
-            p [] [ text "Loading..." ]
-
-        Failure _ ->
-            p [] [ text "Something went wrong :(" ]
-
-        Success currentWeather ->
-            tmpWeatherBreakdown model.timezone currentWeather
-
-
-tmpWeatherBreakdown : Time.Zone -> CurrentWeather -> Html msg
-tmpWeatherBreakdown timezone currentWeather =
-    section []
-        [ h2 [] [ text (cityName currentWeather) ]
-        , h3 [] [ text "Current Weather" ]
-        , p [] [ text ("Temperature (F): " ++ String.fromFloat currentWeather.main.temp) ]
-        , p [] [ text ("High (F): " ++ String.fromFloat currentWeather.main.tempMax) ]
-        , p [] [ text ("Low (F): " ++ String.fromFloat currentWeather.main.tempMin) ]
-        , h3 [] [ text "Wind" ]
-        , p [] [ text ("Wind Speed: " ++ String.fromFloat currentWeather.wind.speed) ]
-        , p [] [ text ("Wind Direction: " ++ String.fromFloat currentWeather.wind.degrees) ]
-        ]
-
-
-cityName : CurrentWeather -> String
-cityName currentWeather =
-    currentWeather.name ++ ", " ++ currentWeather.sys.country
-
-
 baseView : Html msg -> { title : String, content : Html msg }
 baseView subView =
     { title = "City"
@@ -292,96 +189,9 @@ baseView subView =
 -- HTTP
 
 
-getCurrentWeather : Int -> Cmd Msg
-getCurrentWeather cityId =
-    Http.get
-        { url = "http://localhost:5000/current-weather?cityId=" ++ String.fromInt cityId
-        , expect = Http.expectJson GotCurrentWeather currentWeatherDecoder
-        }
-
-
 getForecast : Int -> Cmd Msg
 getForecast cityId =
     Http.get
         { url = "http://localhost:5000/forecast?cityId=" ++ String.fromInt cityId
         , expect = Http.expectJson GotForecast forecastDecoder
         }
-
-
-forecastDecoder : Decode.Decoder Forecast
-forecastDecoder =
-    Decode.map2 Forecast
-        (Decode.field "city" cityDecoder)
-        (Decode.field "list" forecastItemsDecoder)
-
-
-forecastItemsDecoder : Decode.Decoder (List ForecastItem)
-forecastItemsDecoder =
-    Decode.list forecastItemDecoder
-
-
-forecastItemDecoder : Decode.Decoder ForecastItem
-forecastItemDecoder =
-    Decode.map5 ForecastItem
-        (Decode.field "dt" Decode.int)
-        (Decode.field "weather" weathersDecoder)
-        (Decode.field "main" mainDecoder)
-        (Decode.field "wind" windDecoder)
-        (Decode.field "clouds" cloudsDecoder)
-
-
-currentWeatherDecoder : Decode.Decoder CurrentWeather
-currentWeatherDecoder =
-    Decode.map7 CurrentWeather
-        (Decode.field "main" mainDecoder)
-        (Decode.field "wind" windDecoder)
-        (Decode.field "sys" sysDecoder)
-        (Decode.field "name" Decode.string)
-        (Decode.field "weather" weathersDecoder)
-        (Decode.field "dt" Decode.int)
-        (Decode.field "clouds" cloudsDecoder)
-
-
-cloudsDecoder : Decode.Decoder Clouds
-cloudsDecoder =
-    Decode.map Clouds
-        (Decode.field "all" Decode.int)
-
-
-weathersDecoder : Decode.Decoder (List Weather)
-weathersDecoder =
-    Decode.list weatherDecoder
-
-
-weatherDecoder : Decode.Decoder Weather
-weatherDecoder =
-    Decode.map4 Weather
-        (Decode.field "id" Decode.int)
-        (Decode.field "main" Decode.string)
-        (Decode.field "description" Decode.string)
-        (Decode.field "icon" WeatherIcon.decode)
-
-
-sysDecoder : Decode.Decoder Sys
-sysDecoder =
-    Decode.map3 Sys
-        (Decode.field "country" Decode.string)
-        (Decode.field "sunrise" Decode.int)
-        (Decode.field "sunset" Decode.int)
-
-
-windDecoder : Decode.Decoder Wind
-windDecoder =
-    Decode.map2 Wind
-        (Decode.field "speed" Decode.float)
-        (Decode.field "deg" Decode.float)
-
-
-mainDecoder : Decode.Decoder Main
-mainDecoder =
-    Decode.map5 Main
-        (Decode.field "temp" Decode.float)
-        (Decode.field "pressure" Decode.float)
-        (Decode.field "humidity" Decode.float)
-        (Decode.field "temp_min" Decode.float)
-        (Decode.field "temp_max" Decode.float)
