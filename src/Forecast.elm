@@ -1,9 +1,11 @@
 module Forecast exposing
-    ( Forecast
+    ( DayItems
+    , Forecast
     , ForecastItem
     , Main
     , Weather
     , forecastDecoder
+    , groupByDay
     , listMax
     , listMin
     , mean
@@ -15,6 +17,7 @@ module Forecast exposing
 import City exposing (City, cityDecoder)
 import Dict
 import Json.Decode as Decode
+import Time
 
 
 
@@ -31,6 +34,16 @@ type alias ForecastItem =
 type alias Forecast =
     { city : City
     , items : List ForecastItem
+    }
+
+
+type alias DayItems =
+    ( Int, List ForecastItem )
+
+
+type alias DayForecast =
+    { datetime : Int
+    , summary : Summary
     }
 
 
@@ -61,6 +74,58 @@ type alias Main =
 
 
 -- Utils
+-- TODO secondsToPosix is duplicated, maybe use a serializer to turn seconds to posix or millis
+
+
+secondsToPosix : Int -> Time.Posix
+secondsToPosix seconds =
+    seconds
+        |> (*) 1000
+        |> Time.millisToPosix
+
+
+groupByDay : Time.Zone -> List ForecastItem -> List DayItems
+groupByDay timezone items =
+    let
+        dict =
+            List.foldl
+                (\item carry ->
+                    let
+                        day =
+                            item.datetime
+                                |> secondsToPosix
+                                |> Time.toDay timezone
+                    in
+                    Dict.update
+                        day
+                        (\existingDay ->
+                            case existingDay of
+                                Just existing ->
+                                    Just (item :: existing)
+
+                                Nothing ->
+                                    Just [ item ]
+                        )
+                        carry
+                )
+                Dict.empty
+                items
+    in
+    dict
+        |> Dict.toList
+        |> List.sortWith
+            (\( day1, _ ) ( day2, _ ) ->
+                -- handle month changeover
+                if day1 < day2 then
+                    if day2 - day1 > 5 then
+                        GT
+
+                    else
+                        LT
+
+                else
+                    GT
+            )
 
 
 sum : List Float -> Float

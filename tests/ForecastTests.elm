@@ -4,6 +4,7 @@ import Expect
 import Forecast exposing (..)
 import Fuzz
 import Test exposing (..)
+import Time
 
 
 
@@ -51,6 +52,42 @@ all =
         , listMaxTest
         , summarizeTest
         , mostCommonTest
+        , groupByDayTest
+        ]
+
+
+groupByDayTest : Test
+groupByDayTest =
+    describe "groupByDay"
+        [ fuzz itemFuzzer "groups forecast items by day" <|
+            \item1 ->
+                let
+                    item2 =
+                        { item1
+                            | datetime = item1.datetime + (60 * 60 * 24)
+                        }
+
+                    items =
+                        [ item1, item2 ]
+
+                    day1 =
+                        item1.datetime
+                            |> (*) 1000
+                            |> Time.millisToPosix
+                            |> Time.toDay Time.utc
+
+                    day2 =
+                        item2.datetime
+                            |> (*) 1000
+                            |> Time.millisToPosix
+                            |> Time.toDay Time.utc
+                in
+                items
+                    |> groupByDay Time.utc
+                    |> Expect.equal
+                        [ ( day1, [ item1 ] )
+                        , ( day2, [ item2 ] )
+                        ]
         ]
 
 
