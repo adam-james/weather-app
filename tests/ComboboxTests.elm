@@ -297,7 +297,7 @@ optionTests =
                     |> Query.find
                         [ Selector.tag "li"
                         ]
-                    |> Query.has [ Selector.class "options__option--active" ]
+                    |> Query.has [ Selector.class "combobox__option--active" ]
         , test "sets 'aria-selected' to 'true' when active" <|
             \_ ->
                 testWrapper
