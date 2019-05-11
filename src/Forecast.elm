@@ -1,9 +1,13 @@
 module Forecast exposing
-    ( DayItems
+    ( DayForecast
+    , DayItems
+    , FiveDayForecast
     , Forecast
     , ForecastItem
     , Main
     , Weather
+    , dayForecast
+    , fiveDayForecast
     , forecastDecoder
     , groupByDay
     , listMax
@@ -34,6 +38,12 @@ type alias ForecastItem =
 type alias Forecast =
     { city : City
     , items : List ForecastItem
+    }
+
+
+type alias FiveDayForecast =
+    { city : City
+    , items : List DayForecast
     }
 
 
@@ -126,6 +136,36 @@ groupByDay timezone items =
                 else
                     GT
             )
+
+
+fiveDayForecast : Time.Zone -> Forecast -> FiveDayForecast
+fiveDayForecast timezone forecast =
+    let
+        items =
+            forecast.items
+                |> groupByDay timezone
+                |> List.map dayForecast
+    in
+    { city = forecast.city, items = items }
+
+
+dayForecast : DayItems -> DayForecast
+dayForecast ( _, items ) =
+    let
+        first =
+            List.head items
+
+        datetime =
+            case first of
+                Just item ->
+                    item.datetime
+
+                Nothing ->
+                    0
+    in
+    { datetime = datetime
+    , summary = summarize items
+    }
 
 
 sum : List Float -> Float

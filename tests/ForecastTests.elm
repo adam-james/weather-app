@@ -53,6 +53,21 @@ all =
         , summarizeTest
         , mostCommonTest
         , groupByDayTest
+        , dayForecastTest
+        ]
+
+
+dayForecastTest : Test
+dayForecastTest =
+    describe "dayForecast"
+        [ fuzz itemFuzzer "converts to DayForecast" <|
+            \item ->
+                ( 1, [ item ] )
+                |> dayForecast
+                |> Expect.equal {
+                    datetime = item.datetime,
+                    summary = summarize [ item ]
+                }
         ]
 
 

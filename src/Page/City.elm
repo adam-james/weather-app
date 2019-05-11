@@ -11,8 +11,9 @@ import City exposing (City, cityDecoder)
 import DisplayTime exposing (displayDateTime)
 import Forecast
     exposing
-        ( Forecast
-        , ForecastItem
+        ( DayForecast
+        , FiveDayForecast
+        , Forecast
         , Main
         , forecastDecoder
         )
@@ -39,7 +40,7 @@ type Request a
 
 type alias Model =
     { timezone : Time.Zone
-    , forecast : Request Forecast
+    , forecast : Request FiveDayForecast
     }
 
 
@@ -88,7 +89,14 @@ update msg model =
                     )
 
                 Ok forecast ->
-                    ( { model | forecast = Success forecast }
+                    ( { model
+                        | forecast =
+                            Success
+                                (Forecast.fiveDayForecast
+                                    model.timezone
+                                    forecast
+                                )
+                      }
                     , Cmd.none
                     )
 
@@ -105,7 +113,7 @@ view model =
     baseView
         (div
             []
-            [ requestView model.forecast (tmpForecastView model.timezone)
+            [ requestView model.forecast (forecastView model.timezone)
             ]
         )
 
@@ -123,59 +131,66 @@ requestView request render =
             render data
 
 
-tmpForecastView : Time.Zone -> Forecast -> Html msg
-tmpForecastView timezone forecast =
-    section []
-        [ h2 [ class "page-title" ] [ text "5 Day Forecast" ]
-        , ul [ class "forecast-list" ] (List.map (tmpForecastItem timezone) forecast.items)
-        ]
+forecastView : Time.Zone -> FiveDayForecast -> Html msg
+forecastView timezone forecast =
+    let
+        first =
+            List.head forecast.items
+
+        rest =
+            List.tail forecast.items
+    in
+    case ( first, rest ) of
+        ( Just current, Just future ) ->
+            div [ class "container" ]
+                [ section []
+                    [ h3 [ class "section-title" ] [ text "Current Weather" ]
+                    , forecastArticle timezone current
+                    ]
+                , section []
+                    [ h3 [ class "section-title" ] [ text "5 Day Forecast" ]
+                    , ul [ class "forecast-list" ] (List.map (forecastItem timezone) future)
+                    ]
+                ]
+
+        _ ->
+            h2 [] [ text "No forecast" ]
 
 
-
--- TODO group forecast items by day
-
-
-tmpForecastItem : Time.Zone -> ForecastItem -> Html msg
-tmpForecastItem timezone item =
-    li [ class "forecast-list__item" ]
+forecastArticle : Time.Zone -> DayForecast -> Html msg
+forecastArticle timezone item =
+    article [ class "forecast-article" ]
         [ h3 [ class "forecast__date" ] [ text (DisplayTime.displayDate timezone item.datetime) ]
         , forecastInfo item
         ]
 
 
-forecastInfo : ForecastItem -> Html msg
+forecastItem : Time.Zone -> DayForecast -> Html msg
+forecastItem timezone item =
+    li [ class "forecast-list__item" ] [ forecastArticle timezone item ]
+
+
+forecastInfo : DayForecast -> Html msg
 forecastInfo item =
     let
-        first =
-            List.head item.weathers
-
         outer children =
             section [ class "forecast__info" ] children
     in
-    case first of
-        Nothing ->
-            outer
-                [ section
-                    []
-                    [ text "No data" ]
-                ]
-
-        Just weather ->
-            outer
-                [ div [ class "forecast__icon-container" ] [ WeatherIcon.mapIcon weather.icon ]
-                , div [ class "forecast__temps" ]
-                    [ p [ class "forecast__current-temp" ] [ text (String.fromInt (round item.main.temp) ++ " F°") ]
-                    , p [ class "forecast__high-low" ]
-                        [ text (highLow item.main) ]
-                    ]
-                ]
+    outer
+        [ div [ class "forecast__icon-container" ] [ WeatherIcon.mapIcon item.summary.icon ]
+        , div [ class "forecast__temps" ]
+            [ p [ class "forecast__current-temp" ] [ text (String.fromInt (round item.summary.tempMean) ++ " F°") ]
+            , p [ class "forecast__high-low" ]
+                [ text (highLow item) ]
+            ]
+        ]
 
 
-highLow : Main -> String
-highLow itemMain =
-    (String.fromInt (round itemMain.tempMin) ++ " F°")
+highLow : DayForecast -> String
+highLow item =
+    (String.fromInt (round item.summary.tempMin) ++ " F°")
         ++ " | "
-        ++ (String.fromInt (round itemMain.tempMax) ++ " F°")
+        ++ (String.fromInt (round item.summary.tempMax) ++ " F°")
 
 
 baseView : Html msg -> { title : String, content : Html msg }
