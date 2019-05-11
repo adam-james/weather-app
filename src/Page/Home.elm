@@ -205,8 +205,10 @@ view model =
 content : Model -> Html Msg
 content model =
     let
-        outer =
-            form [ Evnts.onSubmit Submit, Attrs.class "search-form" ]
+        outer children =
+            div [ Attrs.class "container" ]
+                [ form [ Evnts.onSubmit Submit, Attrs.class "search-form" ] children
+                ]
 
         combobox =
             Combobox.container
