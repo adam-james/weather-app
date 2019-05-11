@@ -46,8 +46,8 @@ type alias Model =
     }
 
 
-init : Maybe Int -> ( Model, Cmd Msg )
-init maybeId =
+init : Maybe Int -> TS.TemperatureScale -> ( Model, Cmd Msg )
+init maybeId tempScale =
     case maybeId of
         Nothing ->
             ( { timezone = Time.utc
@@ -62,7 +62,7 @@ init maybeId =
               }
             , Cmd.batch
                 [ Task.perform SetTimezone Time.here
-                , getForecast id
+                , getForecast id tempScale
                 ]
             )
 
@@ -220,9 +220,13 @@ baseView subView =
 -- HTTP
 
 
-getForecast : Int -> Cmd Msg
-getForecast cityId =
+getForecast : Int -> TS.TemperatureScale -> Cmd Msg
+getForecast cityId tempScale =
     Http.get
-        { url = "http://localhost:5000/forecast?cityId=" ++ String.fromInt cityId
+        { url =
+            "http://localhost:5000/forecast?cityId="
+                ++ String.fromInt cityId
+                ++ "&units="
+                ++ TS.apiUnits tempScale
         , expect = Http.expectJson GotForecast forecastDecoder
         }

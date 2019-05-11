@@ -69,10 +69,10 @@ init flags url key =
         ( cityModel, cityCmd ) =
             case matchRoute url of
                 Just (City cityId) ->
-                    CityPage.init (Just cityId)
+                    CityPage.init (Just cityId) TempScale.Fahrenheit
 
                 _ ->
-                    CityPage.init Nothing
+                    CityPage.init Nothing TempScale.Fahrenheit
     in
     ( Model
         key
@@ -143,10 +143,10 @@ update msg model =
                 ( cityModel, cityCmd ) =
                     case matchRoute url of
                         Just (City cityId) ->
-                            CityPage.init (Just cityId)
+                            CityPage.init (Just cityId) model.tempScale
 
                         _ ->
-                            CityPage.init Nothing
+                            CityPage.init Nothing model.tempScale
             in
             case matchRoute url of
                 Just (City _) ->

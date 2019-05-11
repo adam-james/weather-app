@@ -15,8 +15,8 @@ mongoose.connect("mongodb://localhost/weather-app-dev", {
   useNewUrlParser: true
 });
 
-function getUrl(endpoint, cityId) {
-  return baseUrl + endpoint + `?id=${cityId}&APPID=${API_KEY}&units=imperial`;
+function getUrl(endpoint, cityId, units) {
+  return baseUrl + endpoint + `?id=${cityId}&APPID=${API_KEY}&units=${units}`;
 }
 
 function handleError(res, err) {
@@ -29,14 +29,14 @@ app.use(cors());
 // Forecast
 
 app.get("/forecast", async (req, res) => {
-  const { cityId } = req.query;
+  const { cityId, units } = req.query;
 
   if (cityId == null) {
     return res.status(422).json({ errors: { name: "City ID required" } });
   }
 
   const endpoint = "/forecast";
-  const url = getUrl(endpoint, cityId);
+  const url = getUrl(endpoint, cityId, units);
 
   try {
     const resp = await fetch(url);

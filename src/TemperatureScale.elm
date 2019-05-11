@@ -1,5 +1,6 @@
 module TemperatureScale exposing
     ( TemperatureScale(..)
+    , apiUnits
     , fromString
     , toString
     , unit
@@ -42,3 +43,13 @@ unit tempScale =
 
         Celsius ->
             "C°"
+
+
+apiUnits : TemperatureScale -> String
+apiUnits tempScale =
+    case tempScale of
+        Fahrenheit ->
+            "imperial"
+
+        Celsius ->
+            "metric"
