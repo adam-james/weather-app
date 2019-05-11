@@ -145,7 +145,7 @@ forecastView timezone forecast =
             div [ class "container" ]
                 [ section []
                     [ h3 [ class "section-title" ] [ text "Current Weather" ]
-                    , forecastArticle timezone current
+                    , forecastArticle timezone current (WeatherIcon.mapIcon current.summary.icon)
                     ]
                 , section []
                     [ h3 [ class "section-title" ] [ text "5 Day Forecast" ]
@@ -157,33 +157,27 @@ forecastView timezone forecast =
             h2 [] [ text "No forecast" ]
 
 
-forecastArticle : Time.Zone -> DayForecast -> Html msg
-forecastArticle timezone item =
+forecastArticle : Time.Zone -> DayForecast -> Html msg -> Html msg
+forecastArticle timezone item icon =
     article [ class "forecast-article" ]
-        [ h3 [ class "forecast__date" ] [ text (DisplayTime.displayDate timezone item.datetime) ]
-        , forecastInfo item
+        [ h3 [ class "forecast__date" ]
+            [ text (DisplayTime.displayDate timezone item.datetime) ]
+        , section [ class "forecast__info" ]
+            [ div [ class "forecast__icon-container" ] [ icon ]
+            , div [ class "forecast__temps" ]
+                [ p [ class "forecast__current-temp" ]
+                    [ text (String.fromInt (round item.summary.tempMean) ++ " F°") ]
+                , p [ class "forecast__high-low" ]
+                    [ text (highLow item) ]
+                ]
+            ]
         ]
 
 
 forecastItem : Time.Zone -> DayForecast -> Html msg
 forecastItem timezone item =
-    li [ class "forecast-list__item" ] [ forecastArticle timezone item ]
-
-
-forecastInfo : DayForecast -> Html msg
-forecastInfo item =
-    let
-        outer children =
-            section [ class "forecast__info" ] children
-    in
-    outer
-        [ div [ class "forecast__icon-container" ] [ WeatherIcon.mapIcon item.summary.icon ]
-        , div [ class "forecast__temps" ]
-            [ p [ class "forecast__current-temp" ] [ text (String.fromInt (round item.summary.tempMean) ++ " F°") ]
-            , p [ class "forecast__high-low" ]
-                [ text (highLow item) ]
-            ]
-        ]
+    li [ class "forecast-list__item" ]
+        [ forecastArticle timezone item (WeatherIcon.mapIconDay item.summary.icon) ]
 
 
 highLow : DayForecast -> String
