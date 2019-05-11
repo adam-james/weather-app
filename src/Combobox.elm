@@ -116,20 +116,32 @@ doFindNext active all remaining =
 -- View
 
 
-textbox : Model a -> List (Attribute msg) -> Html msg
-textbox model attrs =
+textbox : Model a -> (a -> String) -> List (Attribute msg) -> Html msg
+textbox model getId attrs =
     let
         baseAttrs =
             [ Attrs.type_ "text"
             , Attrs.autocomplete False
             , ariaAutocomplete "list"
             , Attrs.class "combobox__input"
+            , role "combobox"
+            , ariaLabelledby labelId
             ]
 
         ownAttrs =
             case model of
-                Expanded _ ->
-                    ariaControls listboxId :: baseAttrs
+                Expanded { activeOption } ->
+                    case activeOption of
+                        Just active ->
+                            ariaActiveDescendant (getId active)
+                                :: ariaExpanded "true"
+                                :: ariaControls listboxId
+                                :: baseAttrs
+
+                        Nothing ->
+                            ariaExpanded "true"
+                                :: ariaControls listboxId
+                                :: baseAttrs
 
                 Collapsed ->
                     baseAttrs
@@ -201,39 +213,14 @@ option model getId getText getAttrs item =
          , Attrs.class class
          , ariaSelected selected
          ]
-            -- TODO is there a better way to do this?
-            -- What is the cost of concatenating lists in Elm?
-            -- This is a bit lazy. Maybe just pass events that are needed.
             ++ getAttrs item
         )
         [ text (getText item) ]
 
 
-container : Model a -> (a -> String) -> List (Html msg) -> Html msg
-container model getId children =
-    let
-        baseAttrs =
-            [ role "combobox", ariaLabelledby labelId ]
-
-        attrs =
-            case model of
-                Expanded options ->
-                    case options.activeOption of
-                        Just active ->
-                            ariaActiveDescendant (getId active)
-                                :: ariaExpanded "true"
-                                :: baseAttrs
-
-                        Nothing ->
-                            ariaControls listboxId :: (ariaExpanded "true" :: baseAttrs)
-
-                Collapsed ->
-                    ariaExpanded "false" :: baseAttrs
-
-                Selected _ ->
-                    ariaExpanded "false" :: baseAttrs
-    in
-    div attrs children
+container : List (Html msg) -> Html msg
+container children =
+    div [] children
 
 
 

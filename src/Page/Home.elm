@@ -212,10 +212,10 @@ content model =
 
         combobox =
             Combobox.container
-                model.options
-                listitemId
                 [ Combobox.comboboxLabel "Find a city"
-                , Combobox.textbox model.options
+                , Combobox.textbox
+                    model.options
+                    listitemId
                     [ Evnts.onInput Input
                     , Evnts.on "keydown" <| keyDecoder
                     , Attrs.value (inputValue model)
