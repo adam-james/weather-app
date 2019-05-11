@@ -16,6 +16,8 @@ body {
   text-align: center;
   background-color: #313131;
   color: #ffffff;
+  /* Padding for fixed header */
+  padding-top: 70px;
 }
 
 .section-title {
@@ -27,6 +29,78 @@ body {
 .page-header {
   height: 70px;
   background-color: #202020;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1em;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  box-sizing: border-box;
+}
+
+.open-settings {
+  color: #4ab2f8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  border: none;
+  width: 2em;
+  background-color: #202020;
+}
+
+.settings-modal {
+  position: absolute;
+  height: 100%;
+  top: 0;
+  z-index: 3;
+  width: 100%;
+  background-color: #313131;
+}
+
+.settings-modal__header {
+  height: 70px;
+  background-color: #202020;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1em;
+  box-sizing: border-box;
+}
+
+.settings-modal__close-button {
+  color: #4ab2f8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  border: none;
+  background-color: #202020;
+}
+
+.settings-modal__radio-input {
+  position: absolute;
+  left: -999px;
+  top: -999px;
+}
+
+.settings-modal__radio-container {
+  display: inline-block;
+}
+
+.settings-modal__radio-container:first-child {
+  display: inline-block;
+  margin-right: 1em;
+}
+
+.settings-modal__radio-label {
+  font-size: 1.5rem;
+  background-color: #202020;
+  color: #4ab2f8;
+  padding: 0.5em;
+  cursor: pointer;
+  border-radius: 1px;
+}
+
+.settings-modal__radio-label--checked {
+  background-color: #4ab2f8;
+  color: #fff;
 }
 
 .page-header__nav {
@@ -40,7 +114,7 @@ body {
   font-size: 18;
   text-decoration: none;
   height: 100%;
-  padding: 16px;
+  padding-top: 16px;
 }
 
 .page-header__nav-link {

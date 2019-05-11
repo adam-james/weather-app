@@ -3,7 +3,8 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
-import Html.Attributes exposing (class, href)
+import Html.Attributes as Attrs exposing (checked, class, for, href, name, type_)
+import Html.Events as Evnts
 import Page.About as AboutPage
 import Page.City as CityPage
 import Page.Home as HomePage
@@ -43,11 +44,23 @@ matchRoute url =
 ---- MODEL ----
 
 
+type SettingsModalState
+    = Open
+    | Closed
+
+
+type TemperatureScale
+    = Farhenheit
+    | Celsius
+
+
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
     , homeModel : HomePage.Model
     , cityModel : CityPage.Model
+    , settingsModalState : SettingsModalState
+    , tempScale : TemperatureScale
     }
 
 
@@ -65,7 +78,15 @@ init flags url key =
                 _ ->
                     CityPage.init Nothing
     in
-    ( Model key url homeModel cityModel, Cmd.map GotCityMsg cityCmd )
+    ( Model
+        key
+        url
+        homeModel
+        cityModel
+        Closed
+        Farhenheit
+    , Cmd.map GotCityMsg cityCmd
+    )
 
 
 
@@ -77,11 +98,33 @@ type Msg
     | UrlChanged Url.Url
     | GotHomeMsg HomePage.Msg
     | GotCityMsg CityPage.Msg
+    | OpenSettingsModal
+    | CloseSettingsModal
+    | SetTempScale String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        SetTempScale id ->
+            let
+                tempScale =
+                    tempScaleFromId id
+            in
+            case tempScale of
+                Just scale ->
+                    -- TODO perform conversions here
+                    ( { model | tempScale = scale }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        OpenSettingsModal ->
+            ( { model | settingsModalState = Open }, Cmd.none )
+
+        CloseSettingsModal ->
+            ( { model | settingsModalState = Closed }, Cmd.none )
+
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
@@ -158,20 +201,30 @@ view model =
             pageView model NotFoundPage.view
 
 
-pageView : Model -> { title : String, content : Html msg } -> Browser.Document msg
+pageView : Model -> { title : String, content : Html Msg } -> Browser.Document Msg
 pageView model page =
+    let
+        body =
+            case model.settingsModalState of
+                Open ->
+                    [ pageHeader model
+                    , page.content
+                    , settingsModal model
+                    ]
+
+                Closed ->
+                    [ pageHeader model
+                    , page.content
+                    ]
+    in
     { title = "Weather App - " ++ page.title
-    , body =
-        [ pageHeader model
-        , page.content
-        ]
+    , body = body
     }
 
 
-pageHeader : Model -> Html msg
+pageHeader : Model -> Html Msg
 pageHeader model =
     let
-    -- TODO improve this
         link =
             case model.cityModel.forecast of
                 CityPage.Success { city } ->
@@ -186,7 +239,108 @@ pageHeader model =
         [ ul [ class "page-header__nav" ]
             [ li [ class "page-header__nav-item" ] link
             ]
+        , button
+            [ class "open-settings"
+            , Evnts.onClick OpenSettingsModal
+            ]
+            [ text (tempScaleText model.tempScale) ]
         ]
+
+
+settingsModal : Model -> Html Msg
+settingsModal model =
+    div [ class "settings-modal" ]
+        [ header [ class "settings-modal__header" ]
+            [ h2 [ class "settings-modal__title" ] [ text "Settings" ]
+            , button
+                [ Evnts.onClick CloseSettingsModal
+                , class "settings-modal__close-button"
+                ]
+                [ text "Close" ]
+            ]
+        , h3 [ class "settings-modal__content-title" ]
+            [ text "Your Settings" ]
+        , form [ class "settings-modal__form" ]
+            [ p []
+                [ text "Temperature Scale" ]
+            , div []
+                [ tempScaleInput Farhenheit model
+                , tempScaleInput Celsius model
+                ]
+            ]
+        ]
+
+
+tempScaleInput : TemperatureScale -> Model -> Html Msg
+tempScaleInput tempScale model =
+    let
+        baseLabelClass =
+            "settings-modal__radio-label"
+
+        checked =
+            tempScale == model.tempScale
+
+        labelClass =
+            if checked then
+                baseLabelClass ++ " settings-modal__radio-label--checked"
+
+            else
+                baseLabelClass
+    in
+    div [ class "settings-modal__radio-container" ]
+        [ label
+            [ for (tempScaleId tempScale)
+            , class labelClass
+            ]
+            [ text (tempScaleText tempScale) ]
+        , input
+            [ type_ "radio"
+            , name "temp-scale"
+            , Attrs.id (tempScaleId tempScale)
+            , class "settings-modal__radio-input"
+            , Attrs.checked checked
+            , Attrs.value (tempScaleId tempScale)
+            , Evnts.onInput SetTempScale
+            ]
+            []
+        ]
+
+
+
+-- TempartureScale
+
+
+tempScaleId : TemperatureScale -> String
+tempScaleId tempScale =
+    case tempScale of
+        Farhenheit ->
+            "fahrenheit"
+
+        Celsius ->
+            "celsius"
+
+
+tempScaleFromId : String -> Maybe TemperatureScale
+tempScaleFromId str =
+    case str of
+        "fahrenheit" ->
+            Just Farhenheit
+
+        "celsius" ->
+            Just Celsius
+
+        _ ->
+            Nothing
+
+
+tempScaleText : TemperatureScale -> String
+tempScaleText tempScale =
+    case tempScale of
+        Farhenheit ->
+            "F°"
+
+        Celsius ->
+            "C°"
 
 
 
