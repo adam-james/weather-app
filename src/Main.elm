@@ -9,6 +9,7 @@ import Page.About as AboutPage
 import Page.City as CityPage
 import Page.Home as HomePage
 import Page.NotFound as NotFoundPage
+import TemperatureScale as TempScale
 import Url
 import Url.Parser as Parser exposing ((</>))
 
@@ -49,18 +50,13 @@ type SettingsModalState
     | Closed
 
 
-type TemperatureScale
-    = Farhenheit
-    | Celsius
-
-
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
     , homeModel : HomePage.Model
     , cityModel : CityPage.Model
     , settingsModalState : SettingsModalState
-    , tempScale : TemperatureScale
+    , tempScale : TempScale.TemperatureScale
     }
 
 
@@ -84,7 +80,7 @@ init flags url key =
         homeModel
         cityModel
         Closed
-        Farhenheit
+        TempScale.Fahrenheit
     , Cmd.map GotCityMsg cityCmd
     )
 
@@ -109,12 +105,21 @@ update msg model =
         SetTempScale id ->
             let
                 tempScale =
-                    tempScaleFromId id
+                    TempScale.fromString id
             in
             case tempScale of
                 Just scale ->
+                    let
+                        ( cityModel, _ ) =
+                            CityPage.update scale CityPage.ConvertTemp model.cityModel
+                    in
                     -- TODO perform conversions here
-                    ( { model | tempScale = scale }, Cmd.none )
+                    ( { model
+                        | tempScale = scale
+                        , cityModel = cityModel
+                      }
+                    , Cmd.none
+                    )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -169,7 +174,7 @@ update msg model =
         GotCityMsg cityMsg ->
             let
                 ( cityModel, cityCmd ) =
-                    CityPage.update cityMsg model.cityModel
+                    CityPage.update model.tempScale cityMsg model.cityModel
             in
             ( { model | cityModel = cityModel }, Cmd.map GotCityMsg cityCmd )
 
@@ -243,7 +248,7 @@ pageHeader model =
             [ class "open-settings"
             , Evnts.onClick OpenSettingsModal
             ]
-            [ text (tempScaleText model.tempScale) ]
+            [ text (TempScale.unit model.tempScale) ]
         ]
 
 
@@ -264,14 +269,14 @@ settingsModal model =
             [ p []
                 [ text "Temperature Scale" ]
             , div []
-                [ tempScaleInput Farhenheit model
-                , tempScaleInput Celsius model
+                [ tempScaleInput TempScale.Fahrenheit model
+                , tempScaleInput TempScale.Celsius model
                 ]
             ]
         ]
 
 
-tempScaleInput : TemperatureScale -> Model -> Html Msg
+tempScaleInput : TempScale.TemperatureScale -> Model -> Html Msg
 tempScaleInput tempScale model =
     let
         baseLabelClass =
@@ -289,58 +294,21 @@ tempScaleInput tempScale model =
     in
     div [ class "settings-modal__radio-container" ]
         [ label
-            [ for (tempScaleId tempScale)
+            [ for (TempScale.toString tempScale)
             , class labelClass
             ]
-            [ text (tempScaleText tempScale) ]
+            [ text (TempScale.unit tempScale) ]
         , input
             [ type_ "radio"
             , name "temp-scale"
-            , Attrs.id (tempScaleId tempScale)
+            , Attrs.id (TempScale.toString tempScale)
             , class "settings-modal__radio-input"
             , Attrs.checked checked
-            , Attrs.value (tempScaleId tempScale)
+            , Attrs.value (TempScale.toString tempScale)
             , Evnts.onInput SetTempScale
             ]
             []
         ]
-
-
-
--- TempartureScale
-
-
-tempScaleId : TemperatureScale -> String
-tempScaleId tempScale =
-    case tempScale of
-        Farhenheit ->
-            "fahrenheit"
-
-        Celsius ->
-            "celsius"
-
-
-tempScaleFromId : String -> Maybe TemperatureScale
-tempScaleFromId str =
-    case str of
-        "fahrenheit" ->
-            Just Farhenheit
-
-        "celsius" ->
-            Just Celsius
-
-        _ ->
-            Nothing
-
-
-tempScaleText : TemperatureScale -> String
-tempScaleText tempScale =
-    case tempScale of
-        Farhenheit ->
-            "F°"
-
-        Celsius ->
-            "C°"
 
 
 

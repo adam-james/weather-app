@@ -5,7 +5,9 @@ module Forecast exposing
     , Forecast
     , ForecastItem
     , Main
+    , Temperature
     , Weather
+    , convertFiveDayForecast
     , dayForecast
     , fiveDayForecast
     , forecastDecoder
@@ -21,11 +23,16 @@ module Forecast exposing
 import City exposing (City, cityDecoder)
 import Dict
 import Json.Decode as Decode
+import TemperatureScale as TS
 import Time
 
 
 
 -- Model
+
+
+type alias Temperature =
+    ( Float, TS.TemperatureScale )
 
 
 type alias ForecastItem =
@@ -58,9 +65,9 @@ type alias DayForecast =
 
 
 type alias Summary =
-    { tempMean : Float
-    , tempMin : Float
-    , tempMax : Float
+    { tempMean : Temperature
+    , tempMin : Temperature
+    , tempMax : Temperature
     , icon : String
     }
 
@@ -138,19 +145,72 @@ groupByDay timezone items =
             )
 
 
-fiveDayForecast : Time.Zone -> Forecast -> FiveDayForecast
-fiveDayForecast timezone forecast =
+fiveDayForecast : Time.Zone -> TS.TemperatureScale -> Forecast -> FiveDayForecast
+fiveDayForecast timezone tempScale forecast =
     let
         items =
             forecast.items
                 |> groupByDay timezone
-                |> List.map dayForecast
+                |> List.map (dayForecast tempScale)
     in
     { city = forecast.city, items = items }
 
 
-dayForecast : DayItems -> DayForecast
-dayForecast ( _, items ) =
+convertFiveDayForecast : TS.TemperatureScale -> FiveDayForecast -> FiveDayForecast
+convertFiveDayForecast tempScale fdForecast =
+    { city = fdForecast.city
+    , items = List.map (convertItem tempScale) fdForecast.items
+    }
+
+
+
+-- Temp conversions from rapid tables
+-- https://www.rapidtables.com/convert/temperature/how-celsius-to-fahrenheit.html
+
+
+cToF : Float -> Float
+cToF float =
+    float * 1.8 + 32
+
+
+fToC : Float -> Float
+fToC float =
+    (float - 32) / 1.8
+
+
+convertTemp : TS.TemperatureScale -> Temperature -> Temperature
+convertTemp tempScale ( degrees, currentScale ) =
+    -- NoOp if trying to convert to same scale
+    if tempScale == currentScale then
+        ( degrees, currentScale )
+
+    else
+        case tempScale of
+            TS.Fahrenheit ->
+                ( cToF degrees, tempScale )
+
+            TS.Celsius ->
+                ( fToC degrees, tempScale )
+
+
+convertSummary : TS.TemperatureScale -> Summary -> Summary
+convertSummary tempScale summary =
+    { summary
+        | tempMean = convertTemp tempScale summary.tempMean
+        , tempMin = convertTemp tempScale summary.tempMin
+        , tempMax = convertTemp tempScale summary.tempMax
+    }
+
+
+convertItem : TS.TemperatureScale -> DayForecast -> DayForecast
+convertItem tempScale df =
+    { datetime = df.datetime
+    , summary = convertSummary tempScale df.summary
+    }
+
+
+dayForecast : TS.TemperatureScale -> DayItems -> DayForecast
+dayForecast tempScale ( _, items ) =
     let
         first =
             List.head items
@@ -164,7 +224,7 @@ dayForecast ( _, items ) =
                     0
     in
     { datetime = datetime
-    , summary = summarize items
+    , summary = summarize tempScale items
     }
 
 
@@ -231,8 +291,8 @@ mostCommon strings =
     string
 
 
-summarize : List ForecastItem -> Summary
-summarize items =
+summarize : TS.TemperatureScale -> List ForecastItem -> Summary
+summarize tempScale items =
     let
         temps =
             List.map (\item -> item.main.temp) items
@@ -249,9 +309,9 @@ summarize items =
                 )
                 items
     in
-    { tempMean = mean temps
-    , tempMin = listMin temps
-    , tempMax = listMax temps
+    { tempMean = ( mean temps, tempScale )
+    , tempMin = ( listMin temps, tempScale )
+    , tempMax = ( listMax temps, tempScale )
     , icon = mostCommon icons
     }
 

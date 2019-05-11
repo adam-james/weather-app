@@ -1,6 +1,6 @@
 module Page.City exposing
     ( Model
-    , Msg
+    , Msg(..)
     , Request(..)
     , init
     , update
@@ -15,6 +15,7 @@ import Forecast
         , FiveDayForecast
         , Forecast
         , Main
+        , Temperature
         , forecastDecoder
         )
 import Html exposing (..)
@@ -22,6 +23,7 @@ import Html.Attributes exposing (class, href)
 import Http
 import Json.Decode as Decode
 import Task
+import TemperatureScale as TS
 import Time
 import Url
 import Url.Parser as Parser exposing ((</>))
@@ -73,11 +75,24 @@ type Msg
     = NoOp
     | GotForecast (Result Http.Error Forecast)
     | SetTimezone Time.Zone
+    | ConvertTemp
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : TS.TemperatureScale -> Msg -> Model -> ( Model, Cmd Msg )
+update tempScale msg model =
     case msg of
+        ConvertTemp ->
+            case model.forecast of
+                Success forecast ->
+                    ( { model
+                        | forecast = Success (Forecast.convertFiveDayForecast tempScale forecast)
+                      }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -94,6 +109,7 @@ update msg model =
                             Success
                                 (Forecast.fiveDayForecast
                                     model.timezone
+                                    tempScale
                                     forecast
                                 )
                       }
@@ -166,12 +182,17 @@ forecastArticle timezone item icon =
             [ div [ class "forecast__icon-container" ] [ icon ]
             , div [ class "forecast__temps" ]
                 [ p [ class "forecast__current-temp" ]
-                    [ text (String.fromInt (round item.summary.tempMean) ++ " F°") ]
+                    [ text (displayTemp item.summary.tempMean) ]
                 , p [ class "forecast__high-low" ]
                     [ text (highLow item) ]
                 ]
             ]
         ]
+
+
+displayTemp : Temperature -> String
+displayTemp ( float, scale ) =
+    String.fromInt (round float) ++ " " ++ TS.unit scale
 
 
 forecastItem : Time.Zone -> DayForecast -> Html msg
@@ -182,9 +203,10 @@ forecastItem timezone item =
 
 highLow : DayForecast -> String
 highLow item =
-    (String.fromInt (round item.summary.tempMin) ++ " F°")
+    -- TODO this diplay this better for screen reader
+    displayTemp item.summary.tempMin
         ++ " | "
-        ++ (String.fromInt (round item.summary.tempMax) ++ " F°")
+        ++ displayTemp item.summary.tempMax
 
 
 baseView : Html msg -> { title : String, content : Html msg }
